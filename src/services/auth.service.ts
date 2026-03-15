@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm'
 export async function registerUserAndCar(fullName: string, email: string, password: string, phoneNumber: string, role: string, plateNumber: string, carModel: string, color: string) {
     const passwordHash = await bcrypt.hash(password, 10)
 
-    const userAndCar = db.transaction(async (tx) => {
+    const userAndCar = await db.transaction(async (tx) => {
         const user = await tx.insert(users).values({ fullName, email, passwordHash, phoneNumber, role }).returning()
         
         const car = await tx.insert(vehicles).values({ userId: user[0].id, plateNumber, carModel, color }).returning()
