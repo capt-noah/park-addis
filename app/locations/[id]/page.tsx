@@ -7,9 +7,10 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
 export default function LocationDetailsPage() {
+  const userStatus: boolean = true
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
-      <Navbar />
+      <Navbar userStatus={userStatus} />
       
       <main className="pt-20 pb-20 px-6">
         <div className="max-w-7xl mx-auto">

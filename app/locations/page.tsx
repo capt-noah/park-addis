@@ -1,12 +1,26 @@
 import LocationsContainer from "@/components/LocationsContainer";
 import { Sidebar } from "@/components/Sidebar";
-import { getCurrentUser } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { findUserBySession } from "@/src/services/auth.service";
 import { redirect } from "next/navigation";
 import { locationsData } from "@/lib/data";
 
 export default async function LocationsPage() {
-  const user = await getCurrentUser();
-  if (!user) redirect("/");
+  const cookieStore = await cookies()
+  const sessionId = cookieStore.get("sessionId")?.value
+
+  if (!sessionId) redirect('/login')
+
+  const dbUser = await findUserBySession(sessionId)
+
+  if (!dbUser) redirect('/login')
+
+  const user = {
+    userId: dbUser.id,
+    email: dbUser.email,
+    fullName: dbUser.fullName,
+    role: dbUser.role ?? "user"
+  }
 
   return (
     <div className="min-h-screen bg-background flex">

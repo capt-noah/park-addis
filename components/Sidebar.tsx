@@ -11,7 +11,7 @@ const menuItems = [
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
-export function Sidebar({ user }: {user?: {fullName: string, email: string, role: string}}) {
+export function Sidebar({ user }: {user?: {userId: string, fullName: string, email: string, role: string}}) {
   const pathname = usePathname();
   const router = useRouter()
 
