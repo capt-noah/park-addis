@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { Search, Sun, Moon } from "lucide-react";
 import { useTheme } from "./ThemeContext";
+import { useState } from "react";
 
-export function Navbar() {
+export function Navbar({ userStatus }: { userStatus: boolean }) {
   const { theme, toggleTheme } = useTheme();
+  const [status, setStatus] = useState(userStatus)
+
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border">
@@ -33,10 +36,16 @@ export function Navbar() {
             {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
           </button>
           
-          <Link href="/login" className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
-            Log in
-          </Link>
+          <div className="px-4 py-1 border border-primary rounded-xl" >
+            <Link href={status? '/dashboard' : '/login'} className="text-sm font-semibold text-foreground hover:text-primary transition-colors">
+              { status?
+              "Dashboard" :" Log in "
+              }
+            </Link>
+          </div>
+
         </div>
+
       </div>
       
       <div className="md:hidden">

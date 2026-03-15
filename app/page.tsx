@@ -4,7 +4,7 @@ import { Search, MapPin, CheckCircle2, Zap, ArrowRight, Star } from "lucide-reac
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { findUserBySession } from "@/src/services/auth.service";
 
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -12,17 +12,22 @@ import { Footer } from "@/components/Footer";
 export default async function Home() {
 
   const cookie = await cookies()
-  const token = cookie.get("sessionId")?.value
+  const sessionId = cookie.get("sessionId")?.value
+  let userStatus: boolean = false
 
-  if (token) {
-    redirect("/dashboard")
-  }
+  if (!sessionId) userStatus = false
   
+  if (sessionId) {
+    let user = await findUserBySession(sessionId)
+    
+    if(user) userStatus = true
+  } 
+
 
 
   return (
     <>
-      <Navbar />
+      <Navbar userStatus={userStatus} />
       <main className="min-h-screen pt-16 bg-background text-foreground transition-colors duration-300">
       {/* Hero Section */}
       <section className="relative w-full overflow-hidden bg-background py-20 px-6">
