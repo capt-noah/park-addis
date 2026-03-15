@@ -1,4 +1,4 @@
-import { PgTable, timestamp, uuid, uniqueIndex, pgTable } from "drizzle-orm/pg-core";
+import { PgTable, index, timestamp, uuid, uniqueIndex, pgTable } from "drizzle-orm/pg-core";
 import { users } from "@/src/schema/users"
 
 
@@ -11,6 +11,6 @@ export const sessions = pgTable(
         createdAt: timestamp("created_at").defaultNow()
     },
     (table) => ({
-        sessionIndex: uniqueIndex("idx_sessions_user_id").on(table.userId)
+        sessionIndex: index("idx_sessions_user_id").on(table.userId)
     })
 )
