@@ -51,7 +51,7 @@ CREATE TABLE parking_availability (
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE bookings (
+CREATE TABLE reservations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     spot_id UUID NOT NULL REFERENCES parking_spots(id) ON DELETE CASCADE,
@@ -62,5 +62,5 @@ CREATE TABLE bookings (
 );
 
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
-CREATE INDEX idx_bookings_user_id ON bookings(user_id);
-CREATE INDEX idx_bookings_spot_id ON bookings(spot_id);
+CREATE INDEX idx_reservations_user_id ON reservations(user_id);
+CREATE INDEX idx_reservations_spot_id ON reservations(spot_id);
