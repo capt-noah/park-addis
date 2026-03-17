@@ -9,7 +9,7 @@ parkingRouter.post('/range', async (req, res) => {
     const { range, coors } = req.body
 
     const parkingWithinRange = await getParkingLocationsWithinRange(range, coors)
-    if (!parkingWithinRange) return res.status(301).json({ error: "No Available Parking Locations Found" })
+    if (!parkingWithinRange) return res.status(401).json({ error: "No Available Parking Locations Found" })
     
     return res.status(200).json({parkingWithinRange})
 

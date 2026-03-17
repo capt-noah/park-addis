@@ -22,6 +22,9 @@ export async function getParkingLocationsWithinRange(range: number, coor: {lng: 
     const response = await db.execute(sql`
             SELECT  id,
                     name,
+                    ratings_sum,
+                    ratings_count,
+                    display_price_per_hour,
                     ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) AS distance, 
                     ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) / 5 AS eta
             FROM parking_locations
@@ -42,9 +45,15 @@ export async function getParkingLocation(id: string) {
 export async function getParkingSpot(spotId: string) {
     const parkingSpot = await db.select()
                                 .from(parkingSpots)
-                                .where(eq(parkingSpots.locationId, spotId))
+                                .where(eq(parkingSpots.id, spotId))
 
     return parkingSpot[0] ?? null
+}
+
+export async function getParkingSpotFromLocationId(locationId: string) {
+    const spot = await db.select().from(parkingSpots).where(eq(parkingSpots.locationId, locationId))
+
+    return spot[0] ?? null
 }
 
 export async function checkParkingAvailability(spotId: string) {
