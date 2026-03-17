@@ -2,14 +2,17 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 const app = express()
-import router from "./routes/auth.routes";
-import { env } from "./config/env";
+import authRouter from "./routes/auth.routes";
+import parkingRouter from "./routes/parking.routes";
+import reservationRouter from "./routes/reservation.routes";
 
 app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
 
-app.use('/api/auth', router)
+app.use('/api/auth', authRouter)
+app.use('/api/parking', parkingRouter)
+app.use('/api/reservation', reservationRouter)
 
 app.get('/', (req, res) => {
     return res.send("it actually works gng!!")

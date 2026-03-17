@@ -2,10 +2,10 @@ import express from 'express'
 import { registerUserAndCar, validateUser, createSession } from '../services/auth.service'
 import { authMiddleware } from '@/src/middleware/auth.middleware'
 
-const router = express.Router()
+const authRouter = express.Router()
 
 
-router.post('/register', async (req, res) => {
+authRouter.post('/register', async (req, res) => {
     const { fullName, email, password, phoneNumber, role, car } = req.body
     const { plateNumber, carModel, color } = car
 
@@ -19,7 +19,7 @@ router.post('/register', async (req, res) => {
     return res.status(201).json({message: "User Created Successfully"})
 })
 
-router.post('/login', async (req, res) => {
+authRouter.post('/login', async (req, res) => {
     const { email, password } = req.body
     const user = await validateUser(email, password)
 
@@ -32,7 +32,7 @@ router.post('/login', async (req, res) => {
     return res.status(200).json({user})
 })
 
-router.get('/me', authMiddleware, async (req, res) => {
+authRouter.get('/me', authMiddleware, async (req, res) => {
     const user = res.locals.user
 
     if (!user) res.status(401).json({ error: "Unauthorized User" })
@@ -45,4 +45,4 @@ router.get('/me', authMiddleware, async (req, res) => {
     })
 })
 
-export default router
+export default authRouter

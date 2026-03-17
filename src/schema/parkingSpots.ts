@@ -1,4 +1,4 @@
-import { pgTable, text, numeric, integer, boolean, uuid } from "drizzle-orm/pg-core"
+import { pgTable, numeric, integer, boolean, uuid, timestamp } from "drizzle-orm/pg-core"
 import { parkingLocations } from "./parkingLocations"
 
 export const parkingSpots = pgTable(
@@ -8,6 +8,8 @@ export const parkingSpots = pgTable(
         locationId: uuid("location_id").notNull().references(() => parkingLocations.id),
         pricePerHour: numeric("price_per_hour").notNull(),
         totalSlots: integer("total_slots").notNull(),
+        availableSlots: integer("available_spots").notNull(),
+        updatedAt: timestamp("updated_at").defaultNow(),
         active: boolean("avtive").default(true)
     }
 )

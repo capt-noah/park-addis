@@ -37,18 +37,28 @@ CREATE INDEX idx_parking_locations_geom
 ON parking_locations
 USING GIST (geom);
 
+-- CREATE TABLE parking_spots (
+--     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+--     location_id UUID NOT NULL REFERENCES parking_locations(id) ON DELETE CASCADE,
+--     price_per_hour NUMERIC(10,2) NOT NULL,
+--     total_slots INTEGER NOT NULL,
+--     active BOOLEAN DEFAULT TRUE
+-- );
+
+-- CREATE TABLE parking_availability (
+--     spot_id UUID PRIMARY KEY REFERENCES parking_spots(id) ON DELETE CASCADE,
+--     available_slots INTEGER NOT NULL,
+--     updated_at TIMESTAMP DEFAULT NOW()
+-- );
+
 CREATE TABLE parking_spots (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     location_id UUID NOT NULL REFERENCES parking_locations(id) ON DELETE CASCADE,
     price_per_hour NUMERIC(10,2) NOT NULL,
     total_slots INTEGER NOT NULL,
-    active BOOLEAN DEFAULT TRUE
-);
-
-CREATE TABLE parking_availability (
-    spot_id UUID PRIMARY KEY REFERENCES parking_spots(id) ON DELETE CASCADE,
     available_slots INTEGER NOT NULL,
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW
+    active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE reservations (

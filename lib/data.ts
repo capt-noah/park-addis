@@ -55,7 +55,7 @@ export const locationsData: ParkingLocation[] = [
   },
   {
     id: "5",
-    name: "Arat Kilo Parking",
+    name: "Arat Kilo",
     address: "Arat Kilo, Eri Bekentu",
     lat: 9.031626,
     lng: 38.761517,
@@ -68,7 +68,7 @@ export const locationsData: ParkingLocation[] = [
   },
   {
     id: "6",
-    name: "Sedest Kilo Parking",
+    name: "Sedest Kilo",
     address: "Sedest Kilo, Lions Cage",
     lat: 9.041209,
     lng: 38.762180,
