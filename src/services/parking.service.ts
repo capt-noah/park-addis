@@ -22,11 +22,14 @@ export async function getParkingLocationsWithinRange(range: number, coor: {lng: 
     const response = await db.execute(sql`
             SELECT  id,
                     name,
+                    address,
                     ratings_sum,
                     ratings_count,
                     display_price_per_hour,
+                    ST_Y(geom::geometry) AS lat,
+                    ST_X(geom::geometry) AS lng,
                     ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) AS distance, 
-                    ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) / 5 AS eta
+                    ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) / 5 / 100 AS eta
             FROM parking_locations
             WHERE ST_DWithin(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY, ${range})
         `)

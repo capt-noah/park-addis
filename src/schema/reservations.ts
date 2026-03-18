@@ -10,7 +10,7 @@ export const reservations = pgTable(
         spotId: uuid("spot_id").notNull().references(() => parkingSpots.id),
         startTime: timestamp("start_time").notNull(),
         endTime: timestamp("end_time").notNull(),
-        status: text("status").default("ative"),
+        status: text("status").default("active"),
         createdAt: timestamp("created_at").defaultNow()
     },
     (table) => ({

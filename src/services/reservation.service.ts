@@ -1,7 +1,9 @@
 import { db } from "../db"
 import { reservations } from "../schema/reservations"
+import { parkingSpots } from "../schema/parkingSpots"
+import { parkingLocations } from "../schema/parkingLocations"
 import { checkParkingAvailability, updateParkingAvailability } from "./parking.service"
-import { eq } from "drizzle-orm"
+import { eq, and, desc } from "drizzle-orm"
 
 
 export async function reserveSpot(userId: string, spotId: string, startTime: Date, endTime: Date) {
@@ -20,16 +22,29 @@ export async function reserveSpot(userId: string, spotId: string, startTime: Dat
 }
 
 export async function getUserReservations(userId: string) {
-	const userReservations = await db.select()
-									 .from(reservations)
-									 .where(eq(reservations.userId, userId))
+	const userReservations = await db.select({
+		id: reservations.id,
+		startTime: reservations.startTime,
+		endTime: reservations.endTime,
+		status: reservations.status,
+		createdAt: reservations.createdAt,
+		spotId: reservations.spotId,
+		locationName: parkingLocations.name,
+		locationAddress: parkingLocations.address,
+		pricePerHour: parkingSpots.pricePerHour
+	})
+	.from(reservations)
+	.innerJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
+	.innerJoin(parkingLocations, eq(parkingSpots.locationId, parkingLocations.id))
+	.where(eq(reservations.userId, userId))
+	.orderBy(desc(reservations.startTime));
 
-	return userReservations ?? null
+	return userReservations;
 }
 
-export async function cancelReservation(userId: string) {
+export async function cancelReservation(reservationId: string, userId: string) {
 	const reservation = await db.delete(reservations)
-								.where(eq(reservations.userId, userId))
+								.where(and(eq(reservations.id, reservationId), eq(reservations.userId, userId)))
 								.returning()
 	if(!reservation[0]) return null
 

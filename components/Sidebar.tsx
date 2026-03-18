@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Search, CalendarDays, User, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Search, CalendarDays, User, Settings, LogOut, MapPin } from "lucide-react";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: MapPin, label: "Locations", href: "/locations" },
   { icon: CalendarDays, label: "My Reservations", href: "/reservations" },
   { icon: User, label: "Profile", href: "/profile" },
   { icon: Settings, label: "Settings", href: "/settings" },

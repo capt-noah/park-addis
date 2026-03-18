@@ -15,15 +15,27 @@ export default function Loading() {
         </div>
 
         {/* Bottom Carousel Skeleton Overlay */}
-        <div className="absolute bottom-10 left-6 z-[500] pointer-events-none max-w-[calc(100vw-100px)] lg:max-w-4xl w-full">
-          <div className="flex gap-4 overflow-hidden px-2">
-            {[1, 2, 3].map((i) => (
-              <Skeleton 
-                key={i} 
-                className="flex-shrink-0 w-[85vw] sm:w-[320px] md:w-[380px] h-[176px] bg-card/80 backdrop-blur-xl border-2 border-border" 
-                style={{ borderRadius: '2rem' }}
-              />
-            ))}
+        <div className="absolute bottom-4 left-0 w-full z-[500] pointer-events-none flex flex-col items-start px-4 md:px-8">
+          
+          {/* Filters Skeleton */}
+          <div className="w-full h-[40px]">
+            <div className="flex gap-2 w-full pb-3">
+             <Skeleton className="w-[60px] h-[28px] rounded-full bg-card/80 backdrop-blur-xl border border-border" />
+             <Skeleton className="w-[60px] h-[28px] rounded-full bg-card/80 backdrop-blur-xl border border-border" />
+               <Skeleton className="w-[60px] h-[28px] rounded-full bg-card/80 backdrop-blur-xl border border-border" />
+            </div>
+          </div>
+
+          <div className="flex w-full h-[175px]">
+            <div className="flex gap-4 overflow-hidden w-full pb-2">
+              {[1, 2, 3].map((i) => (
+                <Skeleton 
+                  key={i} 
+                  className="flex-shrink-0 w-[90vw] sm:w-[320px] md:w-[340px] h-[150px] bg-card/90 backdrop-blur-xl border border-border" 
+                  style={{ borderRadius: '1.5rem' }}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

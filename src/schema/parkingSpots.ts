@@ -8,8 +8,8 @@ export const parkingSpots = pgTable(
         locationId: uuid("location_id").notNull().references(() => parkingLocations.id),
         pricePerHour: numeric("price_per_hour").notNull(),
         totalSlots: integer("total_slots").notNull(),
-        availableSlots: integer("available_spots").notNull(),
+        availableSlots: integer("available_slots").notNull(),
         updatedAt: timestamp("updated_at").defaultNow(),
-        active: boolean("avtive").default(true)
+        active: boolean("active").default(true)
     }
 )
