@@ -42,9 +42,9 @@ export async function getUserReservations(userId: string) {
 	return userReservations;
 }
 
-export async function cancelReservation(reservationId: string, userId: string) {
+export async function cancelReservation(reservationId: string) {
 	const reservation = await db.delete(reservations)
-								.where(and(eq(reservations.id, reservationId), eq(reservations.userId, userId)))
+								.where(and(eq(reservations.id, reservationId)))
 								.returning()
 	if(!reservation[0]) return null
 

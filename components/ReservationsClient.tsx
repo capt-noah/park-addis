@@ -1,6 +1,6 @@
 "use client";
 
-import { TabItem, ReservationCard, TicketModal } from "./ReservationsComponents";
+import { TabItem, ReservationCard, TicketModal } from "./reservations";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -18,8 +18,29 @@ interface Reservation {
 export default function ReservationsClient({ initialReservations, user }: { initialReservations: any[], user: any }) {
   const [activeTab, setActiveTab] = useState("Active");
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
+  const [reservations, setReservations] = useState(initialReservations);
 
-  const filteredReservations = initialReservations.filter(res => {
+  const handleCancel = async (reservationId: string) => {
+    if (!window.confirm("Are you sure you want to cancel this reservation?")) return;
+
+    try {
+      const response = await fetch(`/api/reservations?id=${reservationId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setReservations(prev => prev.filter(r => r.id !== reservationId));
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to cancel reservation");
+      }
+    } catch (error) {
+      console.error("Cancel error:", error);
+      alert("An error occurred while cancelling");
+    }
+  };
+
+  const filteredReservations = reservations.filter(res => {
     const status = (res.status || "active").toLowerCase();
     if (activeTab === "Active") return status === "active" || status === "ative";
     if (activeTab === "Completed") return status === "completed";
@@ -43,19 +64,19 @@ export default function ReservationsClient({ initialReservations, user }: { init
       <div className="flex gap-6 border-b border-border mb-8 overflow-x-auto whitespace-nowrap scrollbar-hide">
         <TabItem 
             label="Active" 
-            count={initialReservations.filter(r => (r.status || "").toLowerCase().includes("active") || (r.status || "").includes("ative")).length} 
+            count={reservations.filter(r => (r.status || "").toLowerCase().includes("active") || (r.status || "").includes("ative")).length} 
             active={activeTab === "Active"} 
             onClick={() => setActiveTab("Active")}
         />
         <TabItem 
             label="Completed" 
-            count={initialReservations.filter(r => (r.status || "").toLowerCase() === "completed").length} 
+            count={reservations.filter(r => (r.status || "").toLowerCase() === "completed").length} 
             active={activeTab === "Completed"} 
             onClick={() => setActiveTab("Completed")}
         />
         <TabItem 
             label="Cancelled" 
-            count={initialReservations.filter(r => (r.status || "").toLowerCase() === "cancelled").length} 
+            count={reservations.filter(r => (r.status || "").toLowerCase() === "cancelled").length} 
             active={activeTab === "Cancelled"} 
             onClick={() => setActiveTab("Cancelled")}
         />
@@ -76,6 +97,7 @@ export default function ReservationsClient({ initialReservations, user }: { init
                 image="/bole.png" 
                 active={res.status.toLowerCase().includes("active") || res.status.toLowerCase().includes("ative")}
                 onViewTicket={() => setSelectedTicket(res)}
+                onCancel={() => handleCancel(res.id)}
             />
           ))
         ) : (

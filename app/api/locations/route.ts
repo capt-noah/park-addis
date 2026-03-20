@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
             image: "/bole.png", 
             rating: loc.ratings_count > 0 ? Number((loc.ratings_sum / loc.ratings_count / 10).toFixed(1)) : 4.5,
             distance: Number((parseFloat(String(loc.distance || 0)) / 1000).toFixed(1)),
-            eta: loc.eta,
+            eta: Math.round(loc.eta),
             popular: 3
         }));
 

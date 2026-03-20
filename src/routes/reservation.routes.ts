@@ -24,9 +24,9 @@ reservationRouter.post('/reservations', async (req, res) => {
 })
 
 reservationRouter.post('/cancel', async (req, res) => {
-    const { userId } = req.body
+    const { reservationId } = req.body
     
-    const isCancelled = await cancelReservation(userId)
+    const isCancelled = await cancelReservation(reservationId)
 
     if (!isCancelled) return res.status(301).json({ error: "Unable To Cancel Reservation" })
     
