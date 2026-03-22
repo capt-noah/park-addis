@@ -1,10 +1,14 @@
-import LocationsContainer from "@/components/LocationsContainer";
 import { Sidebar } from "@/components/Sidebar";
 import { cookies } from "next/headers";
 import { findUserBySession } from "@/src/services/auth.service";
 import { redirect } from "next/navigation";
+
+import MapView from "@/components/map/MapView";
+
 import { getParkingLocationsWithinRange } from "@/src/services/parking.service";
 import { ParkingLocation } from "@/types/location";
+import LocationsContainer from "@/components/LocationsContainer";
+import { locationsData } from "@/lib/data";
 
 export default async function LocationsPage() {
   const cookieStore = await cookies()
@@ -23,9 +27,7 @@ export default async function LocationsPage() {
     role: dbUser.role ?? "user"
   }
 
-  // Fetch from the DB using a very large range to encompass all by default
-  // Default coordinates (used in your map/api fallback as well)
-  const lat = 9.059163326240709;
+    const lat = 9.059163326240709;
   const lng = 38.78243920830075;
   const range = 10000;
 
@@ -53,8 +55,8 @@ export default async function LocationsPage() {
   return (
     <div className="min-h-screen bg-background flex">
       <Sidebar user={user} />
-      <div className="flex-1 ml-0 md:ml-60 relative h-screen overflow-hidden">
-        <LocationsContainer locationsData={mappedLocations} />
+      <div className="w-full ml-0 md:ml-60 relative h-screen overflow-hidden">
+        <LocationsContainer locationsData={locationsData} />
       </div>
     </div>
   );

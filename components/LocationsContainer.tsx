@@ -6,6 +6,7 @@ import MapWrapper from "./MapWrapper";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/Skeleton";
 import { ParkingLocation } from "@/types/location";
+import MapView from "./map/MapView";
 
 export default function LocationsContainer({ locationsData }: {  locationsData: ParkingLocation[] }) {
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
@@ -56,12 +57,13 @@ export default function LocationsContainer({ locationsData }: {  locationsData: 
 
       {/* Full Screen Map */}
       <div className="absolute inset-0 z-0">
-        <MapWrapper 
+        {/* <MapWrapper 
           locations={displayedLocations}
           zoom={13}
           selectedLocationId={selectedLocationId}
           setSelectedLocationId={setSelectedLocationId}
-        />
+        /> */}
+        <MapView />
       </div>
 
       {/* Bottom Carousel Card Overlay + Filters */}
