@@ -1,6 +1,6 @@
 "use client";
 
-import { useMap } from "./MapContext";
+import { useMap } from "../MapContext";
 import { Plus, Minus, Target } from "lucide-react";
 
 export function MapControls() {

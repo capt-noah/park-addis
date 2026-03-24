@@ -1,15 +1,20 @@
 "use client"
 
+import ParkingLayer from "./layers/ParkingLayer"
 import UserLayer from "./layers/UserLayer"
-import { MapControls } from "./MapControls"
+import { MapControls } from "./controls/MapControls"
 import MapRoot from "./MapRoot"
 
-function MapView() {
-
+function MapView({ displayedLocations, onLocationClick }: any) {
+  
   return (
     <MapRoot>
         <MapControls />
         <UserLayer />
+        <ParkingLayer 
+          locations={displayedLocations} 
+          onLocationClick={onLocationClick}
+        />
     </MapRoot>
   )
 }

@@ -1,7 +1,9 @@
 import { db } from "../db";
 import { parkingLocations } from "../schema/parkingLocations";
-import { sql, eq, gt } from "drizzle-orm";
+import { sql, eq, gt, and } from "drizzle-orm";
 import { parkingSpots } from "../schema/parkingSpots";
+
+import { GeoJSONFeature } from "@/types/geojson";
 
 
 export async function createParkingLocation( name: string, address: string, coor: { lng: number, lat: number } ) {
@@ -20,21 +22,32 @@ export async function createParkingLocation( name: string, address: string, coor
 
 export async function getParkingLocationsWithinRange(range: number, coor: {lng: number, lat: number}) {
     const response = await db.execute(sql`
-            SELECT  id,
-                    name,
-                    address,
-                    ratings_sum,
-                    ratings_count,
-                    display_price_per_hour,
-                    ST_Y(geom::geometry) AS lat,
-                    ST_X(geom::geometry) AS lng,
-                    ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) AS distance, 
-                    ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) / 5 / 100 AS eta
-            FROM parking_locations
-            WHERE ST_DWithin(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY, ${range})
-        `)
+                        SELECT
+                            JSON_BUILD_OBJECT(
+                                'type', 'FeatureCollection',
+                                'features', JSON_AGG(
+                                JSON_BUILD_OBJECT(
+                                    'type', 'Feature',
+                                    'geometry', ST_AsGeoJson(geom)::json,
+                                    'properties', JSON_BUILD_OBJECT(
+                                        'id', id,
+                                        'name', name,
+                                        'address', address,
+                                        'ratingsSum', ratings_sum,
+                                        'ratingsCount', ratings_count,
+                                        'ratings', ratings_sum / ratings_count,
+                                        'price', display_price_per_hour,
+                                        'distance', ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY),
+                                        'eta', ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) / 5 / 100 
+                                    )
+                                )
+                                )
+                            ) AS GeoJson
+                        FROM parking_locations
+                        WHERE ST_DWithin(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY, ${range})
+                    `)
     
-    return response ?? null
+    return response[0]?.geojson ?? null
 }
 
 export async function getParkingLocation(id: string) {
@@ -43,6 +56,19 @@ export async function getParkingLocation(id: string) {
                                     .where(eq(parkingLocations.id, id))
 
     return parkingLocation[0] ?? null
+}
+
+export async function getParkingLocationsJson() {
+    const geoJson = await db.execute(sql`
+        SELECT 
+              id,
+              name,
+              address,
+              ST_AsGeoJson(geom)::JSON AS geometry
+        FROM parking_locations
+        `)
+    
+    return geoJson ?? null
 }
 
 export async function getParkingSpot(spotId: string) {
@@ -62,7 +88,7 @@ export async function getParkingSpotFromLocationId(locationId: string) {
 export async function checkParkingAvailability(spotId: string) {
     const parkingSpot = await db.select()
                                 .from(parkingSpots)
-                                .where(eq(parkingSpots.id, spotId) && gt(parkingSpots.availableSlots, 0))
+                                .where(and(eq(parkingSpots.id, spotId), gt(parkingSpots.availableSlots, 0)))
 
     return parkingSpot[0] ?? null
 }

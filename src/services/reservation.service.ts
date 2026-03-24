@@ -13,11 +13,13 @@ export async function reserveSpot(userId: string, spotId: string, startTime: Dat
 	const response = await db.insert(reservations)
 							 .values({ userId, spotId, startTime, endTime })
 							 .returning()
+	
 	if (!response[0]) return null
 
-	const incrementSpot = await updateParkingAvailability(spotId, 1, 0)
+	// Decrement available slots on reservation
+	await updateParkingAvailability(spotId, 0, 1)
 	
-	return incrementSpot ?? null
+	return response[0]
 	
 }
 
@@ -48,7 +50,8 @@ export async function cancelReservation(reservationId: string) {
 								.returning()
 	if(!reservation[0]) return null
 
-	const decrementSpot = await updateParkingAvailability(reservation[0].spotId, 0, 1)
+	// Increment available slots on cancellation
+	await updateParkingAvailability(reservation[0].spotId, 1, 0)
 	
-	return decrementSpot ?? null
+	return reservation[0]
 }

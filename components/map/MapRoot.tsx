@@ -19,6 +19,7 @@ function MapRoot({ children, center = [38.7525, 9.0190], zoom = 13 }: MapRootPro
     const { coords, locateUser } = useGeolocation(map)
 
     useEffect(() => {
+
         if (map || !mapContainer.current) return
         
         const newMap = new maplibregl.Map({

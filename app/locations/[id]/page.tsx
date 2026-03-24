@@ -1,9 +1,12 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { findUserBySession } from "@/src/services/auth.service";
-import { getParkingLocation, getParkingSpotFromLocationId } from "@/src/services/parking.service";
+import {
+  getParkingLocation,
+  getParkingSpotFromLocationId,
+} from "@/src/services/parking.service";
 import { getVehiclesByUserId } from "@/src/services/cars.service";
-import LocationDetailsClient from "@/components/LocationDetailsClient";
+import LocationDetailsClient from "@/components/location/LocationDetailsClient";
 import { ParkingLocation } from "@/types/location";
 
 interface PageProps {
@@ -12,13 +15,13 @@ interface PageProps {
 
 export default async function LocationDetailsPage({ params }: PageProps) {
   const { id } = await params;
-  
+
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("sessionId")?.value;
-  if (!sessionId) redirect('/login');
-  
+  if (!sessionId) redirect("/login");
+
   const user = await findUserBySession(sessionId);
-  if (!user) redirect('/login');
+  if (!user) redirect("/login");
 
   const dbLocation = await getParkingLocation(id);
   if (!dbLocation) {
@@ -37,20 +40,23 @@ export default async function LocationDetailsPage({ params }: PageProps) {
     id: dbLocation.id,
     name: dbLocation.name,
     address: dbLocation.address,
-    image: '/bole.png', // Default placeholder
+    image: "/bole.png", // Default placeholder
     price: spot ? parseFloat(spot.pricePerHour) : 25,
-    rating: dbLocation.ratingsCount && dbLocation.ratingsCount > 0 
-      ? parseFloat((dbLocation.ratingsSum! / dbLocation.ratingsCount).toFixed(1)) 
-      : 4.5,
-    distance: 0, 
-    eta: 0
+    rating:
+      dbLocation.ratingsCount && dbLocation.ratingsCount > 0
+        ? parseFloat(
+            (dbLocation.ratingsSum! / dbLocation.ratingsCount).toFixed(1),
+          ) / 10
+        : 4.5,
+    distance: 0,
+    eta: 0,
   };
 
   return (
-    <LocationDetailsClient 
-      location={location} 
-      spot={spot} 
-      initialVehicles={vehicles} 
+    <LocationDetailsClient
+      location={location}
+      spot={spot}
+      initialVehicles={vehicles}
     />
   );
 }
