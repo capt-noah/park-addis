@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { getParkingLocationsWithinRange } from "@/src/services/parking.service";
 import { GeoJSONFeature } from "@/types/geojson";
 import LocationsContainer from "@/components/location/LocationsContainer";
+import { DEFAULT_LAT, DEFAULT_LNG, DEFAULT_RANGE } from "@/src/constants/location";
+import { MapProvider } from "@/components/map/MapContext";
 
 export default async function LocationsPage() {
   const cookieStore = await cookies();
@@ -24,9 +26,9 @@ export default async function LocationsPage() {
     role: dbUser.role ?? "user",
   };
 
-  const lat = 9.059163326240709;
-  const lng = 38.78243920830075;
-  const range = 10000;
+  const lat = DEFAULT_LAT;
+  const lng = DEFAULT_LNG;
+  const range = DEFAULT_RANGE;
 
   const result = await getParkingLocationsWithinRange(range, { lat, lng });
 
@@ -38,7 +40,9 @@ export default async function LocationsPage() {
     <div className="min-h-screen bg-background flex">
       <Sidebar user={user} />
       <div className="w-full ml-0 md:ml-60 relative h-screen overflow-hidden">
-        <LocationsContainer locationsData={locations} />
+        <MapProvider>
+          <LocationsContainer locationsData={locations} />
+        </MapProvider>
       </div>
     </div>
   );

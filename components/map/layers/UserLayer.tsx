@@ -10,6 +10,20 @@ export default function UserLayer() {
     const markerRef = useRef<maplibregl.Marker | null>(null)
     const hasAutoZoomed = useRef(false)
     
+    // Auto-zoom to user location once when first acquired
+    useEffect(() => {
+        if (!map || !coords || hasAutoZoomed.current) return
+        
+        map.flyTo({
+            center: [coords.lng, coords.lat],
+            zoom: 15,
+            essential: true,
+            duration: 1500
+        })
+        
+        hasAutoZoomed.current = true
+    }, [map, coords])
+
     useEffect(() => {
         if (!map || !coords) return
         

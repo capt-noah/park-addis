@@ -1,10 +1,10 @@
 "use client"
 
-import { useRef, useEffect, useState } from "react"
-import { MapContext } from "./MapContext"
+import { useRef, useEffect } from "react"
+import { useMap } from "./MapContext"
 import maplibregl from "maplibre-gl"
 import 'maplibre-gl/dist/maplibre-gl.css';
-import useGeolocation from "./hooks/useGeolocation"
+import { DEFAULT_LAT, DEFAULT_LNG } from "@/src/constants/location";
 
 interface MapRootProps {
     children?: React.ReactNode,
@@ -12,14 +12,18 @@ interface MapRootProps {
     zoom?: number
 }
 
-function MapRoot({ children, center = [38.7525, 9.0190], zoom = 13 }: MapRootProps){
+const DEFAULT_CENTER: [number, number] = [DEFAULT_LNG, DEFAULT_LAT];
+
+function MapRoot({ 
+    children, 
+    center = DEFAULT_CENTER, 
+    zoom = 13 
+}: MapRootProps){
 
     const mapContainer = useRef<HTMLDivElement | null>(null)
-    const [map, setMap] = useState<maplibregl.Map | null>(null)
-    const { coords, locateUser } = useGeolocation(map)
+    const { map, setMap } = useMap()
 
     useEffect(() => {
-
         if (map || !mapContainer.current) return
         
         const newMap = new maplibregl.Map({
@@ -29,20 +33,21 @@ function MapRoot({ children, center = [38.7525, 9.0190], zoom = 13 }: MapRootPro
             zoom
         })
 
-        setMap(newMap)
+        newMap.once('load', () => {
+            setMap(newMap)
+        })
 
         return (() => {
             newMap.remove()
             setMap(null)
         })
-    }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mapContainer.current])
 
   return (
       <div className="w-full h-full relative">
         <div ref={mapContainer} className="w-full h-full" />
-        <MapContext.Provider value={{ map, coords, locateUser }}>
-            {children}
-        </MapContext.Provider>
+        {children}
       </div>
   )
 }

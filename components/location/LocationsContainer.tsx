@@ -6,6 +6,8 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/Skeleton";
 import { GeoJSONFeature, ParkingFeatures } from "@/types/geojson";
 import MapView from "../map/MapView";
+import { useMap } from "../map/MapContext";
+import { ADDIS_ABABA_CENTER } from "@/src/constants/location";
 
 export default function LocationsContainer({
   locationsData,
@@ -18,18 +20,22 @@ export default function LocationsContainer({
   const [distanceFilter, setDistanceFilter] = useState<"All" | 200 | 400 | 600>(
     "All",
   );
+  const { coords: userLocation } = useMap();
   const [displayedLocations, setDisplayedLocations] = useState<
     ParkingFeatures[]
-  >(locationsData.features);
+  >(locationsData?.features || []);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFilterClick = async (filter: "All" | 200 | 400 | 600) => {
     setDistanceFilter(filter);
+    // The Map now handles filtering internally via the ParkingLayer or by updating the data source
+    // without needing the container to manually filter displayedLocations in JS.
+    // For now, we still trigger the fetch to get fresh data if needed, 
+    // but the intention is to move toward passing the filter prop to the map.
     setIsLoading(true);
 
-    // We assume default coordinates if geolocation wasn't requested in time
-    const lat = 9.059163326240709;
-    const lng = 38.78243920830075;
+    const lat = userLocation?.lat ?? ADDIS_ABABA_CENTER.lat;
+    const lng = userLocation?.lng ?? ADDIS_ABABA_CENTER.lng;
 
     try {
       const res = await fetch(

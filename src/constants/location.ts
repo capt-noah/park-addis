@@ -1,0 +1,8 @@
+export const DEFAULT_LAT = 9.059163326240709;
+export const DEFAULT_LNG = 38.78243920830075;
+export const DEFAULT_RANGE = 10000;
+
+export const ADDIS_ABABA_CENTER = {
+  lat: DEFAULT_LAT,
+  lng: DEFAULT_LNG,
+};
