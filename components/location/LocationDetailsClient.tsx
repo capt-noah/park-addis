@@ -12,7 +12,8 @@ import {
   AmenityItem,
   RuleItem,
   BookingWidget,
-} from "../location-details";
+} from "./details";
+import { useSession } from "../session/AppSessionProvider";
 
 interface LocationDetailsClientProps {
   location: ParkingLocation;
@@ -26,6 +27,7 @@ export default function LocationDetailsClient({
   initialVehicles,
 }: LocationDetailsClientProps) {
   const router = useRouter();
+  const { activeReservation, refreshSession } = useSession();
 
   const [vehicles] = useState<any[]>(initialVehicles);
   const [isReserving, setIsReserving] = useState(false);
@@ -83,17 +85,29 @@ export default function LocationDetailsClient({
     }
 
     try {
+      if (activeReservation) {
+        alert("You already have an active parking session. Please complete it before booking a new one.");
+        return;
+      }
+
+      if (!selectedVehicle) {
+        alert("Please select a vehicle first.");
+        return;
+      }
+
       const res = await fetch("/api/reservations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           spotId: spot.id,
+          vehicleId: selectedVehicle.id,
           startTime: start.toISOString(),
           endTime: end.toISOString(),
         }),
       });
 
       if (res.ok) {
+        await refreshSession();
         router.push("/reservations");
       } else {
         const data = await res.json();

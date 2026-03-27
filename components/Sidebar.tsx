@@ -3,28 +3,25 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Search, CalendarDays, User, Settings, LogOut, MapPin } from "lucide-react";
+import { useSession } from "@/components/session/AppSessionProvider";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: MapPin, label: "Locations", href: "/locations" },
-  { icon: CalendarDays, label: "My Reservations", href: "/reservations" },
+  { icon: CalendarDays, label: "My Reservations", href: "/reservations", badge: true },
   { icon: User, label: "Profile", href: "/profile" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
 export function Sidebar({ user }: {user?: {userId: string, fullName: string, email: string, role: string}}) {
   const pathname = usePathname();
-  const router = useRouter()
-
+  const router = useRouter();
+  const { activeReservation } = useSession();
 
   const handleLogout = async () => {
-
     const response = await fetch('/api/logout')
-
     const data = await response.json()
-
     if (!data.ok) console.log('unable to logout')
-    
     router.replace('/')
   }
 
@@ -42,6 +39,8 @@ export function Sidebar({ user }: {user?: {userId: string, fullName: string, ema
       <div className="flex-1 px-3 space-y-0.5">
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
+          const showBadge = item.badge && activeReservation;
+
           return (
             <Link
               key={item.href}
@@ -54,7 +53,12 @@ export function Sidebar({ user }: {user?: {userId: string, fullName: string, ema
             >
               <item.icon className={`w-4 h-4 ${isActive ? "text-primary" : "group-hover:text-foreground"}`} />
               <span className="text-xs">{item.label}</span>
-              {isActive && (
+              {showBadge && (
+                <div className="ml-auto flex items-center gap-1.5">
+                   <div className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-shimmer" />
+                </div>
+              )}
+              {isActive && !showBadge && (
                 <div className="ml-auto w-1 h-1 bg-primary rounded-full" />
               )}
             </Link>

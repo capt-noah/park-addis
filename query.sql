@@ -53,10 +53,25 @@ CREATE TABLE parking_spots (
 CREATE TABLE reservations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    vehicle_id UUID NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
     spot_id UUID NOT NULL REFERENCES parking_spots(id) ON DELETE CASCADE,
     start_time TIMESTAMPTZ NOT NULL,
     end_time TIMESTAMPTZ NOT NULL,
-    status TEXT DEFAULT 'active',
+    actual_start_time TIMESTAMPTZ,
+    actual_end_time TIMESTAMPTZ,
+    status TEXT NOT NULL DEFAULT 'RESERVED'
+        CHECK (status IN ('RESERVED','ACTIVE','COMPLETED','PAID','CANCELLED','EXPIRED')),
+    qr_token TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE payments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    reservation_id UUID NOT NULL REFERENCES reservations(id) ON DELETE CASCADE,
+    amount NUMERIC(10, 2) NOT NULL,
+    status TEXT NOT NULL
+        CHECK (status IN ('PENDING','SUCCESS','FAILED')),
+    transaction_id TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

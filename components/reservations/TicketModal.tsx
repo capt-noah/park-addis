@@ -1,88 +1,450 @@
 "use client";
 
-import { Clock } from "lucide-react";
-import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { Clock, Banknote, X, Car, CreditCard, CheckCircle2, Timer, XCircle } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 
 export function TicketModal({ reservation, onClose }: { reservation: any; onClose: () => void }) {
   if (!reservation) return null;
 
-  const startTime = new Date(reservation.startTime);
-  const endTime = new Date(reservation.endTime);
-  const dateStr = startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const timeStr = `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  const status = (reservation.status || "").toUpperCase();
+  const isReserved        = status === "RESERVED";
+  const isActive          = status === "ACTIVE";
+  const isCancelled       = status === "CANCELLED";
+  const isCompletedUnpaid = status === "COMPLETED";
+  const isCompletedPaid   = status === "PAID";
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="w-full max-w-[380px] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="p-6 pb-2 flex flex-col items-center">
-          <div className="flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-[#004D40] rounded-[0.6rem] flex items-center justify-center shadow-lg shadow-emerald-900/20">
-               <span className="text-white font-black text-lg">P</span>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="relative w-full max-w-[360px] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 p-2 bg-slate-100/80 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full transition-colors z-20"
+        >
+          <X size={16} strokeWidth={3} />
+        </button>
+
+        {/* Top: Branding + QR */}
+        <div className="pt-8 pb-6 px-8 flex flex-col items-center border-b border-dashed border-slate-200 relative">
+          <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
+          <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
+
+          <div className="flex items-center gap-2 mb-5 mt-2">
+            <div className="w-8 h-8 bg-[#004D40] rounded-lg flex items-center justify-center shadow-sm">
+              <span className="text-white font-bold text-xl">P</span>
             </div>
-            <span className="text-xl font-black tracking-tight text-[#004D40]">ParkAddis</span>
+            <h1 className="text-xl font-extrabold tracking-tight text-[#004D40]">ParkAddis</h1>
           </div>
 
-          <div className="w-[180px] aspect-square bg-[#F8F9FA] rounded-[1.5rem] border border-slate-100 p-6 flex flex-col items-center justify-center mb-4 relative group">
-             <div className="w-full h-full relative">
-               <Image src="/qr-placeholder.png" alt="QR Code" fill className="object-contain" />
-             </div>
+          {/* Status pill */}
+          {isCompletedPaid && (
+            <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100">
+              <CheckCircle2 size={13} className="text-emerald-600" />
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">Transaction Successful</span>
+            </div>
+          )}
+
+          {/* QR Code */}
+          <div className="z-10">
+            <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 shadow-inner">
+              <QRCodeSVG
+                value={reservation.qrToken || "park-addis"}
+                size={120}
+                level="L"
+                includeMargin={false}
+                fgColor="#004D40"
+              />
+            </div>
           </div>
-          
-          <p className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase mb-2">Scan at Entrance</p>
+
+          <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+            {isReserved        && "Scan at Entrance"}
+            {isActive          && "Scan to Exit"}
+            {isCompletedUnpaid && "Session Ended"}
+            {isCompletedPaid   && "Session Ended"}
+            {isCancelled       && "Reservation Cancelled"}
+          </p>
         </div>
 
-        {/* Perforated Line */}
-        <div className="relative h-4 flex items-center">
-          <div className="absolute left-0 -translate-x-1/2 w-5 h-5 bg-slate-900/40 rounded-full" />
-          <div className="absolute right-0 translate-x-1/2 w-5 h-5 bg-slate-900/40 rounded-full" />
-          <div className="w-full border-t-2 border-dashed border-slate-100" />
-        </div>
+        {/* Details body — switches by status */}
+        {isReserved        && <ReservedDetails   reservation={reservation} onClose={onClose} />}
+        {isActive          && <ActiveDetails     reservation={reservation} onClose={onClose} />}
+        {isCompletedUnpaid && <UnpaidDetails     reservation={reservation} onClose={onClose} />}
+        {isCompletedPaid   && <PaidDetails       reservation={reservation} onClose={onClose} />}
+        {isCancelled       && <CancelledDetails  reservation={reservation} onClose={onClose} />}
 
-        {/* Details - Scrollable if needed */}
-        <div className="p-6 pt-4 space-y-4 overflow-y-auto scrollbar-hide">
-          <div className="space-y-0.5">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Parking Location</p>
-            <p className="text-sm font-black text-[#004D40] leading-tight">{reservation.locationName}</p>
+        {/* Perforated Tear-off Edge */}
+        <div className="absolute -bottom-2.5 left-0 right-0 h-4 flex items-center justify-center overflow-visible pointer-events-none z-0">
+          <div className="w-full h-4 flex gap-2 px-2">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="flex-1 h-4 bg-slate-900/40 rounded-full" />
+            ))}
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-             <div className="space-y-0.5">
-               <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Plate Number</p>
-               <p className="text-sm font-black text-[#004D40]">ET 2-A12345</p>
-             </div>
-             <div className="space-y-0.5">
-               <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Date</p>
-               <p className="text-sm font-black text-[#004D40]">{dateStr}</p>
-             </div>
-          </div>
-
-          <div className="space-y-0.5">
-            <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Time Slot</p>
-            <div className="flex items-center gap-2">
-              <Clock className="w-3.5 h-3.5 text-[#004D40]" />
-              <p className="text-sm font-black text-[#004D40]">{timeStr}</p>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-slate-50 flex justify-between items-center">
-            <div className="space-y-0.5">
-               <p className="text-[8px] font-black text-slate-400 uppercase tracking-wider">Total Price</p>
-               <p className="text-xl font-black text-primary">ETB {reservation.pricePerHour}</p>
-            </div>
-            <div className="px-2.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full text-[8px] font-black border border-emerald-100 uppercase tracking-wide">
-               Paid
-            </div>
-          </div>
-
-          <button 
-            onClick={onClose}
-            className="w-full bg-[#0F172A] text-white py-4 rounded-2xl font-black text-xs tracking-wide hover:opacity-90 transition-all shadow-lg shadow-slate-900/20 active:scale-95 mt-2"
-          >
-            Close Ticket
-          </button>
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─── RESERVED ─── */
+function ReservedDetails({ reservation, onClose }: any) {
+  const startTime = new Date(reservation.startTime);
+  const endTime   = new Date(reservation.endTime);
+  const dateStr   = startTime.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const fmt       = (d: Date) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const timeStr   = `${fmt(startTime)} – ${fmt(endTime)}`;
+
+  return (
+    <>
+      <div className="px-8 py-6 space-y-5 flex-1">
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Parking Location</p>
+          <h3 className="text-base font-bold text-slate-900">{reservation.locationName}</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-5">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plate Number</p>
+            <p className="text-sm font-semibold text-slate-700">{reservation.plateNumber || "N/A"}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
+            <p className="text-sm font-semibold text-slate-700">{dateStr}</p>
+          </div>
+        </div>
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Time Slot</p>
+          <div className="flex items-center gap-2 text-[#004D40]">
+            <Clock size={15} />
+            <p className="text-sm font-bold">{timeStr}</p>
+          </div>
+        </div>
+      </div>
+      <div className="px-8 pb-10 pt-2">
+        <button onClick={onClose} className="w-full bg-[#004D40] text-white font-bold py-4 rounded-2xl hover:bg-[#004D40]/90 transition-all text-sm active:scale-[0.98] shadow-lg shadow-[#004D40]/20">
+          Close Ticket
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* ─── ACTIVE ─── */
+function ActiveDetails({ reservation, onClose }: any) {
+  const startTime    = new Date(reservation.actualStartTime ?? reservation.startTime);
+  const endTime      = new Date(reservation.endTime);
+  const pricePerHour = parseFloat(reservation.pricePerHour || "0");
+
+  const BILLING_MINS = 15;
+
+  // Use functional updater + useRef so the interval never becomes stale
+  const [tick, setTick] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setTick(t => t + 1);
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  const now         = new Date();
+  const totalMs     = Math.max(1, endTime.getTime() - startTime.getTime());
+  const elapsedMs   = Math.max(0, now.getTime() - startTime.getTime());
+  const remainingMs = Math.max(0, endTime.getTime() - now.getTime());
+  const progress    = Math.min(100, (elapsedMs / totalMs) * 100);
+
+  // Cost ticks in 15-min increments
+  const billingIntervals = Math.floor(elapsedMs / (BILLING_MINS * 60 * 1000));
+  const billedHrs        = (billingIntervals * BILLING_MINS) / 60;
+  const costSoFar        = (billedHrs * pricePerHour).toFixed(2);
+
+  // Countdown HH:MM:SS
+  const rh = Math.floor(remainingMs / 3_600_000);
+  const rm = Math.floor((remainingMs % 3_600_000) / 60_000);
+  const rs = Math.floor((remainingMs % 60_000) / 1_000);
+  const countdown = `${String(rh).padStart(2, "0")}:${String(rm).padStart(2, "0")}:${String(rs).padStart(2, "0")}`;
+
+  const fmt = (d: Date) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+  return (
+    <>
+      <div className="px-8 py-5 space-y-4 flex-1">
+        {/* Countdown + progress */}
+        <div className="bg-[#004D40]/5 rounded-2xl p-4 border border-[#004D40]/10">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-[#004D40]">
+              <Timer size={15} />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Time Remaining</span>
+            </div>
+            <span className="font-mono text-lg font-extrabold text-slate-900 tabular-nums">{countdown}</span>
+          </div>
+          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#004D40] rounded-full transition-all duration-1000"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-1.5">
+            <span className="text-[9px] text-slate-400 font-medium">Entry: {fmt(startTime)}</span>
+            <span className="text-[9px] text-slate-400 font-medium">Exit by: {fmt(endTime)}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Location</p>
+            <p className="text-xs font-bold text-slate-700 truncate">{reservation.locationName}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plate</p>
+            <p className="text-xs font-bold text-slate-700">{reservation.plateNumber || "N/A"}</p>
+          </div>
+        </div>
+
+          <div className="flex justify-between items-center bg-slate-50 rounded-2xl px-5 py-3 border border-slate-100">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost So Far</p>
+            <p className="text-2xl font-extrabold text-slate-900">ETB {costSoFar}</p>
+          </div>
+      </div>
+      <div className="px-8 pb-10 pt-2">
+        <button onClick={onClose} className="w-full bg-[#004D40] text-white font-bold py-4 rounded-2xl hover:bg-[#004D40]/90 transition-all text-sm active:scale-[0.98] shadow-lg shadow-[#004D40]/20">
+          Close Ticket
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* ─── COMPLETED + UNPAID ─── */
+function UnpaidDetails({ reservation, onClose }: any) {
+  const startTime = new Date(reservation.actualStartTime ?? reservation.startTime);
+  const endTime   = new Date(reservation.actualEndTime   ?? reservation.endTime);
+  const dateStr   = startTime.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const fmt       = (d: Date) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const timeStr   = `${fmt(startTime)} – ${fmt(endTime)}`;
+
+  const durationMs  = Math.max(0, endTime.getTime() - startTime.getTime());
+  const durationHrs = durationMs / (1000 * 60 * 60);
+  const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
+  const baseRate    = parseFloat(reservation.pricePerHour || "0");
+  const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
+  const resFee      = 5.00;
+  const svcFee      = 2.50;
+  const totalDue    = (parkingFee + resFee + svcFee).toFixed(2);
+
+  return (
+    <>
+      <div className="px-8 py-5 space-y-4 flex-1 relative overflow-hidden">
+        {/* UNPAID watermark */}
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0">
+          <span className="text-red-500/10 font-black text-6xl uppercase tracking-[0.3em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
+            UNPAID
+          </span>
+        </div>
+        
+        <div className="relative z-10 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
+              <p className="text-xs font-bold text-slate-700">{dateStr}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plate Number</p>
+              <p className="text-xs font-bold text-slate-700">{reservation.plateNumber || "N/A"}</p>
+            </div>
+          </div>
+
+          <div className="pb-3 border-b border-slate-100">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Location</p>
+            <p className="text-xs font-bold text-slate-700 truncate">{reservation.locationName}</p>
+          </div>
+
+          <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+              <Clock size={16} className="text-[#004D40]" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-slate-900">{timeStr}</p>
+              <p className="text-[10px] text-slate-500 font-medium">Actual Parking Time</p>
+            </div>
+          </div>
+
+          {/* Fee Breakdown */}
+          <div className="bg-red-50/30 p-4 rounded-2xl border border-red-100/50">
+            <div className="space-y-2">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60">Parking ({durationDisplay})</span>
+                <span className="text-xs font-bold text-slate-600">ETB {parkingFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60">Reservation Fee</span>
+                <span className="text-xs font-bold text-slate-600">ETB {resFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pb-2 border-b border-red-100/30">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60">Service Fee</span>
+                <span className="text-xs font-bold text-slate-600">ETB {svcFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-red-600">Total Due</span>
+                <span className="text-xl font-extrabold text-red-600">ETB {totalDue}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="px-8 pb-10 pt-2">
+        <button className="w-full bg-[#004D40] hover:bg-[#004D40]/90 text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]">
+          <Banknote size={20} className="group-hover:scale-110 transition-transform" />
+          Pay Now
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* ─── COMPLETED + PAID ─── */
+function PaidDetails({ reservation, onClose }: any) {
+  const startTime = new Date(reservation.actualStartTime ?? reservation.startTime);
+  const endTime   = new Date(reservation.actualEndTime   ?? reservation.endTime);
+  const dateStr   = startTime.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const fmt       = (d: Date) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const timeStr   = `${fmt(startTime)} – ${fmt(endTime)}`;
+  const durationMs  = Math.max(0, endTime.getTime() - startTime.getTime());
+  const durationHrs = durationMs / (1000 * 60 * 60);
+  const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
+  const baseRate    = parseFloat(reservation.pricePerHour || "0");
+  const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
+  const resFee      = 5.00;
+  const svcFee      = 2.50;
+  const totalPaid   = (parkingFee + resFee + svcFee).toFixed(2);
+
+  return (
+    <>
+      <div className="px-8 py-5 space-y-4 flex-1 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0">
+          <span className="text-emerald-500/10 font-black text-6xl uppercase tracking-[0.3em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
+            PAID
+          </span>
+        </div>
+        <div className="relative z-10 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
+              <p className="text-xs font-bold text-slate-700">{dateStr}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Time</p>
+              <p className="text-xs font-bold text-slate-700">{timeStr}</p>
+            </div>
+          </div>
+          <div className="space-y-2 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                <Car size={17} className="text-[#004D40]" />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-[11px] font-bold text-slate-900 truncate">Plate: {reservation.plateNumber || "N/A"}</p>
+                <p className="text-[9px] text-slate-500 uppercase tracking-wider">{reservation.locationName}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
+                <CreditCard size={17} className="text-[#004D40]" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[11px] font-bold text-slate-900">ParkAddis Wallet</p>
+                <p className="text-[9px] text-slate-500">Paid securely</p>
+              </div>
+            </div>
+          </div>
+          {/* Mini receipt summary */}
+          <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+            <div className="flex justify-between items-baseline mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/60">Parking ({durationDisplay})</span>
+              <span className="text-xs font-bold text-slate-600">ETB {parkingFee.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/60">Reservation Fee</span>
+              <span className="text-xs font-bold text-slate-600">ETB {resFee.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-emerald-100/50">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60">Service Fee</span>
+              <span className="text-xs font-bold text-slate-600">ETB {svcFee.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between items-center pt-1">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#004D40]">Total Paid</span>
+              <span className="text-xl font-extrabold text-slate-900">ETB {totalPaid}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="px-8 pb-10 pt-2">
+        <button onClick={onClose} className="w-full bg-[#004D40] text-white font-bold py-4 rounded-2xl hover:bg-[#004D40]/90 transition-all text-sm active:scale-[0.98] shadow-lg shadow-[#004D40]/20">
+          Close Ticket
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* ─── CANCELLED ─── */
+function CancelledDetails({ reservation, onClose }: any) {
+  const startTime = new Date(reservation.startTime);
+  const endTime   = new Date(reservation.endTime);
+  const dateStr   = startTime.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  const fmt       = (d: Date) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const timeStr   = `${fmt(startTime)} – ${fmt(endTime)}`;
+
+  return (
+    <>
+      <div className="px-8 py-6 space-y-5 flex-1 relative overflow-hidden">
+        {/* CANCELLED watermark */}
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0">
+          <span className="text-[#004D40]/5 font-black text-5xl uppercase tracking-[0.2em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
+            CANCELLED
+          </span>
+        </div>
+
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center gap-3 bg-[#004D40]/5 p-3 rounded-2xl border border-[#004D40]/10">
+            <div className="p-2 bg-white rounded-xl shadow-sm border border-[#004D40]/10">
+              <Clock size={16} className="text-[#004D40] opacity-80" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-[#004D40]">{dateStr}</p>
+              <p className="text-[10px] text-[#004D40]/70 font-medium">{timeStr}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 bg-[#004D40]/5 p-3 rounded-2xl border border-[#004D40]/10">
+            <div className="p-2 bg-white rounded-xl shadow-sm border border-[#004D40]/10">
+              <Car size={16} className="text-[#004D40] opacity-80" />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-[11px] font-bold text-[#004D40] truncate">{reservation.locationName}</p>
+              <p className="text-[10px] text-[#004D40]/70 font-medium">{reservation.plateNumber || "N/A"}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 bg-red-50/50 p-3 rounded-2xl border border-red-100">
+            <div className="p-2 bg-white rounded-xl shadow-sm border border-red-100">
+              <XCircle size={16} className="text-red-400" />
+            </div>
+            <div>
+              <p className="text-[11px] font-bold text-red-600/80 uppercase tracking-widest">Status</p>
+              <p className="text-[10px] text-red-500/80 font-medium">Reservation Cancelled</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="px-8 pb-10 pt-2 relative z-10">
+        <button onClick={onClose} className="w-full bg-[#004D40] text-white font-bold py-4 rounded-2xl hover:bg-[#004D40]/90 transition-all text-sm active:scale-[0.98] shadow-lg shadow-[#004D40]/20">
+          Close Ticket
+        </button>
+      </div>
+    </>
   );
 }

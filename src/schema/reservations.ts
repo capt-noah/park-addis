@@ -1,16 +1,21 @@
 import { pgTable, uuid, uniqueIndex, timestamp, text } from "drizzle-orm/pg-core"
 import { users } from "./users"
 import { parkingSpots } from "./parkingSpots"
+import { vehicles } from "./vehicles"
 
 export const reservations = pgTable(
     "reservations",
     {
         id: uuid("id").primaryKey().defaultRandom(),
         userId: uuid("user_id").notNull().references(() => users.id),
-        spotId: uuid("spot_id").notNull().references(() => parkingSpots.id),
+        vehicleId: uuid("vehicle_id").notNull().references(() => vehicles.id, { onDelete: 'cascade' }),
+        spotId: uuid("spot_id").notNull().references(() => parkingSpots.id, { onDelete: 'cascade' }),
         startTime: timestamp("start_time").notNull(),
         endTime: timestamp("end_time").notNull(),
-        status: text("status").default("active"),
+        actualStartTime: timestamp("actual_start_time"),
+        actualEndTime: timestamp("actual_end_time"),
+        status: text("status").notNull().default("RESERVED"),
+        qrToken: text("qr_token").notNull().unique(),
         createdAt: timestamp("created_at").defaultNow()
     },
     (table) => ({

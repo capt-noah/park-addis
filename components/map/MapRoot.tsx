@@ -4,7 +4,7 @@ import { useRef, useEffect } from "react"
 import { useMap } from "./MapContext"
 import maplibregl from "maplibre-gl"
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { DEFAULT_LAT, DEFAULT_LNG } from "@/src/constants/location";
+import { DEFAULT_LAT, DEFAULT_LNG } from "@/lib/location";
 
 interface MapRootProps {
     children?: React.ReactNode,

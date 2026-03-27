@@ -15,6 +15,8 @@ export const metadata: Metadata = {
   description: "Find and book parking spots in Addis Ababa with ease.",
 };
 
+import { AppSessionProvider } from "@/components/session/AppSessionProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +26,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${outfit.variable} font-sans antialiased text-foreground bg-background`}>
         <ThemeProvider>
-          {children}
+          <AppSessionProvider>
+            {children}
+          </AppSessionProvider>
         </ThemeProvider>
       </body>
     </html>

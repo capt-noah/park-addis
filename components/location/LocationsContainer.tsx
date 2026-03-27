@@ -1,41 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Locations from "./Locations";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, Ticket } from "lucide-react";
 import { Skeleton } from "@/components/Skeleton";
 import { GeoJSONFeature, ParkingFeatures } from "@/types/geojson";
 import MapView from "../map/MapView";
 import { useMap } from "../map/MapContext";
-import { ADDIS_ABABA_CENTER } from "@/src/constants/location";
+import { ADDIS_ABABA_CENTER } from "@/lib/location";
+import { useSession } from "../session/AppSessionProvider";
+import Link from "next/link";
 
 export default function LocationsContainer({
   locationsData,
 }: {
   locationsData: GeoJSONFeature;
 }) {
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
-    null,
-  );
+  const {
+    selectedLocationId,
+    setSelectedLocationId,
+    activeReservation,
+    userLocation: sessionLocation,
+    setUserLocation: setSessionLocation,
+  } = useSession();
+
   const [distanceFilter, setDistanceFilter] = useState<"All" | 200 | 400 | 600>(
     "All",
   );
-  const { coords: userLocation } = useMap();
+  const { coords: mapLocation } = useMap();
   const [displayedLocations, setDisplayedLocations] = useState<
     ParkingFeatures[]
   >(locationsData?.features || []);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Sync map location to session
+  useEffect(() => {
+    if (mapLocation) {
+      setSessionLocation(mapLocation);
+    }
+  }, [mapLocation, setSessionLocation]);
+
   const handleFilterClick = async (filter: "All" | 200 | 400 | 600) => {
     setDistanceFilter(filter);
-    // The Map now handles filtering internally via the ParkingLayer or by updating the data source
-    // without needing the container to manually filter displayedLocations in JS.
-    // For now, we still trigger the fetch to get fresh data if needed, 
-    // but the intention is to move toward passing the filter prop to the map.
     setIsLoading(true);
 
-    const lat = userLocation?.lat ?? ADDIS_ABABA_CENTER.lat;
-    const lng = userLocation?.lng ?? ADDIS_ABABA_CENTER.lng;
+    const lat = sessionLocation?.lat ?? ADDIS_ABABA_CENTER.lat;
+    const lng = sessionLocation?.lng ?? ADDIS_ABABA_CENTER.lng;
 
     try {
       const res = await fetch(
@@ -71,10 +81,32 @@ export default function LocationsContainer({
         </div>
       </div>
 
+      {/* Active Session Notification (Phase C) */}
+      {activeReservation && (
+        <div className="absolute top-24 left-6 right-6 z-[500] pointer-events-none flex justify-center">
+          <Link
+            href="/reservations"
+            className="pointer-events-auto flex items-center gap-3 bg-primary text-white px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-top duration-500 hover:scale-105 transition-transform"
+          >
+            <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+              <Ticket className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase opacity-80 leading-none mb-1">
+                Active Session
+              </p>
+              <p className="text-sm font-black leading-none">
+                {activeReservation.locationName}
+              </p>
+            </div>
+          </Link>
+        </div>
+      )}
+
       {/* Full Screen Map */}
       <div className="absolute inset-0 z-0">
-        <MapView 
-          displayedLocations={displayedLocations} 
+        <MapView
+          displayedLocations={displayedLocations}
           onLocationClick={setSelectedLocationId}
         />
       </div>

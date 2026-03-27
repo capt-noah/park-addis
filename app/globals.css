@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "maplibre-gl/dist/maplibre-gl.css";
-@import "leaflet/dist/leaflet.css";
 
 :root {
   --background: #ffffff;
@@ -105,58 +104,60 @@ body {
   }
 }
 
-/* Custom Parking Pin (Circular with Tail & Dot) */
+/* Custom Parking Pin (Modern White Bubble Style) */
 .parking-pin {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #064e3b; /* Dark brand green */
-  width: 42px;
-  height: 42px;
-  border-radius: 50%; /* Circle */
+  background-color: var(--primary);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
   position: relative;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: 2px solid white;
+  transition: all 0.2s ease-out;
+  border: none; /* No border needed for this clean look */
 }
 
 .parking-pin:hover {
   transform: scale(1.1) translateY(-2px);
   z-index: 1000;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* Thin Tail / Stem */
+/* Sharp white pointer at the bottom */
 .parking-pin::before {
   content: '';
   position: absolute;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 2px;
-  height: 12px;
-  background-color: #064e3b;
-}
-
-/* Terminal Dot at the location point */
-.parking-pin::after {
-  content: '';
-  position: absolute;
-  bottom: -20px;
+  bottom: -6px;
   left: 50%;
   transform: translateX(-50%);
   width: 10px;
   height: 10px;
-  background-color: #064e3b;
   border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  background-color: var(--primary);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+/* Small brand green dot at the very tip / coordinates */
+.parking-pin::after {
+  content: '';
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background-color: var(--primary);
+  border-radius: 50%;
+  border: 1.5px solid white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .pin-logo-text {
   color: white;
-  font-size: 18px;
-  font-weight: 800; /* bold P */
+  font-size: 20px;
+  font-weight: 800; /* Extra bold */
   line-height: 1;
-  letter-spacing: -0.05em;
 }

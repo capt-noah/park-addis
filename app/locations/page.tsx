@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { getParkingLocationsWithinRange } from "@/src/services/parking.service";
 import { GeoJSONFeature } from "@/types/geojson";
 import LocationsContainer from "@/components/location/LocationsContainer";
-import { DEFAULT_LAT, DEFAULT_LNG, DEFAULT_RANGE } from "@/src/constants/location";
+import { DEFAULT_LAT, DEFAULT_LNG, DEFAULT_RANGE } from "@/lib/location";
 import { MapProvider } from "@/components/map/MapContext";
 
 export default async function LocationsPage() {

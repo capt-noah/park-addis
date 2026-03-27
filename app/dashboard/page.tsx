@@ -2,8 +2,11 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { findUserBySession } from "@/src/services/auth.service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Calendar, History, Map as MapIcon, ArrowUpRight, ArrowRight,ParkingCircle,Clock,CircleCheck,CircleX} from "lucide-react";
+import { Calendar, History, Map as MapIcon, ArrowUpRight, ArrowRight,ParkingCircle,Clock,CheckCircle2,XCircle} from "lucide-react";
 import { cookies } from "next/headers";
+import { getUserReservations, getActiveReservation } from "@/src/services/reservation.service";
+import { RecentHistoryTable } from "@/components/dashboard/RecentHistoryTable";
+import { ActiveSessionCard } from "@/components/dashboard/ActiveSessionCard";
 
 
 export default async function DashboardPage() {
@@ -23,6 +26,10 @@ export default async function DashboardPage() {
     fullName: dbUser.fullName,
     role: dbUser.role ?? "user"
   }
+
+  const allReservations = await getUserReservations(dbUser.id);
+  const recentReservations = allReservations.slice(0, 4);
+  const activeReservation = await getActiveReservation(dbUser.id);
 
   return (
     <DashboardLayout user={user}>
@@ -87,127 +94,16 @@ export default async function DashboardPage() {
 
       </div>
 
+      {/* Active Session Card (if any) */}
+      {activeReservation && (
+        <ActiveSessionCard reservation={activeReservation} />
+      )}
+
       {/* Recent History Table */}
-      <div className="bg-card rounded-3xl p-6 border border-border shadow-sm">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-xl font-bold text-foreground tracking-tight">Recent History</h2>
-          <div className="flex gap-2">
-             <button className="px-4 py-2 rounded-xl border border-border text-[11px] font-bold text-muted-foreground hover:bg-muted transition-colors">
-               Filter
-             </button>
-             <button className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[11px] font-bold hover:opacity-90 transition-colors">
-               Export
-             </button>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-left border-b border-border">
-                <th className="pb-4 text-[9px] uppercase tracking-widest font-extrabold text-muted-foreground">Parking Location</th>
-                <th className="pb-4 text-[9px] uppercase tracking-widest font-extrabold text-muted-foreground">Time & Date</th>
-                <th className="pb-4 text-[9px] uppercase tracking-widest font-extrabold text-muted-foreground text-center">Status</th>
-                <th className="pb-4 text-[9px] uppercase tracking-widest font-extrabold text-muted-foreground">Amount</th>
-                <th className="pb-4 text-[9px] uppercase tracking-widest font-extrabold text-muted-foreground text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              <HistoryRow 
-                icon={<ParkingCircle className="w-4 h-4 text-primary" />}
-                name="Bole Medhanialem"
-                id="Zone A, Spot 42"
-                time="Today"
-                date="2:30 PM - 5:00 PM"
-                status="ACTIVE"
-                amount="--"
-              />
-              <HistoryRow 
-                icon={<Clock className="w-4 h-4 text-muted-foreground" />}
-                name="Churchill Road Plaza"
-                id="Zone B, Spot 12"
-                time="Yesterday"
-                date="10:00 AM - 12:30 PM"
-                status="COMPLETED"
-                amount="ETB 45.00"
-              />
-              <HistoryRow 
-                icon={<MapIcon className="w-4 h-4 text-muted-foreground" />}
-                name="Edna Mall Underground"
-                id="Level -2, Spot 88"
-                time="Oct 24, 2023"
-                date="08:30 PM - 11:00 PM"
-                status="COMPLETED"
-                amount="ETB 60.00"
-              />
-              <HistoryRow 
-                icon={<div className="text-xs font-bold text-muted-foreground/40">P</div>}
-                name="Meskel Square East"
-                id="Zone C, Spot 05"
-                time="Oct 22, 2023"
-                date="09:00 AM - 10:15 AM"
-                status="CANCELLED"
-                amount="--"
-              />
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="mt-8 flex items-center justify-between">
-          <p className="text-[10px] font-medium text-muted-foreground">Showing <span className="text-foreground font-bold">1-4</span> of <span className="text-foreground font-bold">148</span> results</p>
-          <div className="flex gap-2">
-             <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
-               <ArrowRight className="w-3.5 h-3.5 rotate-180 text-muted-foreground" />
-             </button>
-             <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-border hover:bg-muted transition-colors">
-               <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
-             </button>
-          </div>
-        </div>
-      </div>
+      <RecentHistoryTable 
+        recentReservations={recentReservations} 
+        totalCount={allReservations.length} 
+      />
     </DashboardLayout>
-  );
-}
-
-function HistoryRow({ icon, name, id, time, date, status, amount }: any) {
-  const statusColors: any = {
-    ACTIVE: "bg-primary/10 text-primary border-primary/20",
-    COMPLETED: "bg-muted text-muted-foreground border-border",
-    CANCELLED: "bg-red-500/10 text-red-500 border-red-500/20",
-  };
-
-  return (
-    <tr className="group hover:bg-muted/30 transition-colors">
-      <td className="py-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-muted rounded-xl flex items-center justify-center border border-border group-hover:bg-card transition-colors">
-            {icon}
-          </div>
-          <div>
-            <p className="text-xs font-bold text-foreground">{name}</p>
-            <p className="text-[10px] text-muted-foreground font-medium">{id}</p>
-          </div>
-        </div>
-      </td>
-      <td>
-        <div className="space-y-0.5">
-          <p className="font-bold text-foreground text-[11px]">{time}</p>
-          <p className="text-[10px] text-muted-foreground font-medium tracking-tight">{date}</p>
-        </div>
-      </td>
-      <td className="text-center">
-        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-extrabold border ${statusColors[status]}`}>
-          {status}
-        </span>
-      </td>
-      <td>
-        <p className="font-bold text-foreground text-[11px] font-sans tracking-wide">{amount}</p>
-      </td>
-      <td className="text-right">
-        <button className="text-[11px] font-bold text-primary hover:underline">
-          View Details
-        </button>
-      </td>
-    </tr>
   );
 }

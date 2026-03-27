@@ -42,7 +42,7 @@ export async function getParkingLocationsWithinRange(range: number, coor: {lng: 
                                     )
                                 )
                                 )
-                            ) AS GeoJson
+                            ) AS geojson
                         FROM parking_locations
                         WHERE ST_DWithin(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY, ${range})
                     `)

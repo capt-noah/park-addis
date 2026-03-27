@@ -12,13 +12,16 @@ export function ReservationCard({ status, name, address, startTime, endTime, pri
   const minutes = Math.round((durationInHours - hours) * 60);
   const durationStr = `${hours}h ${minutes}m`;
 
+  const hourlyRate = parseFloat(price || "0");
+  const estimatedTotal = (durationInHours * hourlyRate).toFixed(2);
+
   return (
     <div className="bg-card rounded-3xl overflow-hidden border border-border shadow-sm flex flex-col md:flex-row h-full md:min-h-[220px] group hover:shadow-lg transition-all duration-500">
       <div className="w-full md:w-[240px] relative shrink-0 overflow-hidden bg-slate-900">
         <Image src={image} alt={name} fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" />
-        <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-2.5 py-1 bg-card/95 backdrop-blur-md rounded-full text-[8px] font-extrabold text-foreground border border-border shadow-sm">
+        <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-2.5 py-1 bg-card/95 backdrop-blur-md rounded-full text-[8px] font-extrabold text-foreground border border-border shadow-sm uppercase tracking-wider">
           <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-primary animate-pulse' : 'bg-muted-foreground'}`} />
-          {status === 'ATIVE' ? 'ACTIVE' : status}
+          {status}
         </div>
       </div>
       
@@ -33,7 +36,7 @@ export function ReservationCard({ status, name, address, startTime, endTime, pri
           </div>
           <div className="text-left sm:text-right shrink-0">
              <p className="text-[9px] uppercase font-bold text-muted-foreground tracking-wider mb-0.5">Estimated Price</p>
-             <p className="text-2xl font-black text-primary leading-none">ETB {price}</p>
+             <p className="text-2xl font-black text-primary leading-none">ETB {estimatedTotal}</p>
           </div>
         </div>
 
@@ -79,7 +82,10 @@ export function ReservationCard({ status, name, address, startTime, endTime, pri
              </div>
            ) : (
              <div className="flex items-center gap-4 w-full justify-end">
-               <button className="bg-transparent text-muted-foreground hover:text-foreground hover:bg-muted px-6 py-3 rounded-xl font-bold text-[10px] transition-all flex items-center gap-2">
+               <button 
+                 onClick={onViewTicket}
+                 className="bg-[#004D40] text-white px-6 py-3 rounded-xl font-bold text-[10px] flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-[#004D40]/20 hover:scale-[1.02] active:scale-95"
+               >
                  View Details <ChevronRight className="w-4 h-4" />
                </button>
              </div>

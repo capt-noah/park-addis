@@ -18,15 +18,16 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { spotId, startTime, endTime } = body;
+        const { spotId, vehicleId, startTime, endTime } = body;
 
-        if (!spotId || !startTime || !endTime) {
+        if (!spotId || !vehicleId || !startTime || !endTime) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
         const reservation = await reserveSpot(
             user.id,
             spotId,
+            vehicleId,
             new Date(startTime),
             new Date(endTime)
         );

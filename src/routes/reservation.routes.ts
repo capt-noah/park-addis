@@ -1,12 +1,12 @@
 import express from "express"
-import { cancelReservation, getUserReservations, reserveSpot } from "../services/reservation.service"
+import { cancelReservation, completeSession, getUserReservations, reserveSpot, startSession, validateQRToken } from "../services/reservation.service"
 
 const reservationRouter = express.Router()
 
 reservationRouter.post('/reserve', async (req, res) => {
-    const { userId, spotId, startTime, endTime } = req.body
+    const { userId, spotId, vehicleId, startTime, endTime } = req.body
     
-    const reservedSpot = await reserveSpot(userId, spotId, startTime, endTime)
+    const reservedSpot = await reserveSpot(userId, spotId, vehicleId, startTime, endTime)
 
     if (!reservedSpot) return res.status(301).json({ error: "Unable to Reserve Parking Spot" })
     
@@ -21,6 +21,36 @@ reservationRouter.post('/reservations', async (req, res) => {
     if (!reservations) return res.status(301).json({ error: "No Reservations Found" })
     
     return res.status(200).json({reservations})
+})
+
+reservationRouter.post('/validate', async (req, res) => {
+    const { qrToken } = req.body
+    
+    const response = await validateQRToken(qrToken)
+
+    if (!response) return res.status(401).json({ error: "Invalid Token" })
+    
+    return res.status(200).json(response)
+})
+
+reservationRouter.post('/start', async (req, res) => {
+    const { reservationId } = req.body
+
+    const response = await startSession(reservationId)
+
+    if (!response) return res.status(401).json({ error: "Unable to Start Session" })
+    
+    return res.status(200).json(response)
+})
+
+reservationRouter.post('/complete', async (req, res) => {
+    const { reservationId } = req.body
+    
+    const response = await completeSession(reservationId)
+
+    if (!response) return res.status(401).json({ error: "Unable to Complete Session" })
+    
+    return res.status(200).json(response)
 })
 
 reservationRouter.post('/cancel', async (req, res) => {

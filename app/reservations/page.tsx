@@ -3,7 +3,7 @@ import { findUserBySession } from "@/src/services/auth.service";
 import { getUserReservations } from "@/src/services/reservation.service";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import ReservationsClient from "@/components/ReservationsClient";
+import ReservationsClient from "@/components/reservations/ReservationsClient";
 
 export default async function ReservationsPage() {
   const cookieStore = await cookies()
