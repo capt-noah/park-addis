@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Clock, Banknote, Car, Plus, ArrowRight, X, Minus, Loader2 } from "lucide-react";
-import { extendReservationAction } from "@/src/actions/reservation.actions";
+import { extendReservation } from "@/src/services/reservation.service";
 
 export function ExtendSessionModal({ reservation, onClose }: { reservation: any; onClose: () => void }) {
   const [extraMinutes, setExtraMinutes] = useState<number | string>(30);
@@ -27,12 +27,12 @@ export function ExtendSessionModal({ reservation, onClose }: { reservation: any;
   const handleExtend = async () => {
     setIsExtending(true);
     try {
-      const res = await extendReservationAction(reservation.id, parsedMins);
-      if (res.success) {
+      const success = await extendReservation(reservation.id, parsedMins);
+      if (success) {
         alert(`Session extended by ${parsedMins} minutes!`);
         onClose();
       } else {
-        alert(res.error || "Failed to extend session");
+        alert("Failed to extend session");
       }
     } catch (err: any) {
       alert(err.message || "An unexpected error occurred");

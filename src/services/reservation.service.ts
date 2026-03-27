@@ -1,3 +1,5 @@
+"use server";
+
 import { db } from "../db"
 import { reservations } from "../schema/reservations"
 import { parkingSpots } from "../schema/parkingSpots"
@@ -7,6 +9,7 @@ import { vehicles } from "../schema/vehicles"
 import { eq, and, or, desc } from "drizzle-orm"
 import crypto from "crypto"
 import { payments } from "../schema/payments"
+import { revalidatePath } from "next/cache"
 
 export async function reserveSpot(userId: string, spotId: string, vehicleId: string, startTime: Date, endTime: Date) {
 	const isAvailable = await checkParkingAvailability(spotId)
@@ -174,10 +177,13 @@ export async function extendReservation(reservationId: string, extraMinutes: num
 	const newEndTime = new Date(reservation.endTime)
 	newEndTime.setMinutes(newEndTime.getMinutes() + extraMinutes)
 
-	const response = await db.update(reservations)
+	await db.update(reservations)
 							 .set({ endTime: newEndTime })
 							 .where(eq(reservations.id, reservationId))
 							 .returning()
 	
-	return response[0] || null
+	revalidatePath("/dashboard")
+	revalidatePath("/reservations")
+	
+	return true
 }
