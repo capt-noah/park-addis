@@ -5,6 +5,7 @@ import { reservations } from "../schema/reservations"
 import { parkingSpots } from "../schema/parkingSpots"
 import { parkingLocations } from "../schema/parkingLocations"
 import { checkParkingAvailability, updateParkingAvailability } from "./parking.service"
+import { createPayment } from "./payment.service";
 import { vehicles } from "../schema/vehicles"
 import { eq, and, or, desc } from "drizzle-orm"
 import crypto from "crypto"
@@ -101,10 +102,6 @@ export async function getActiveReservation(userId: string) {
 	return active[0] || null;
 }
 
-/**
- * Entry point for the Staff App to validate a QR code.
- * Routes to either start or complete a session based on current state.
- */
 export async function validateQRToken(token: string) {
 	const response = await db.select()
 							 .from(reservations)
@@ -118,10 +115,15 @@ export async function validateQRToken(token: string) {
 		return await startSession(reservation.id)
 	} else if (reservation.status === 'ACTIVE') {
 		return await completeSession(reservation.id)
+	} else if (reservation.status === 'COMPLETED') {
+		if(!reservation.actualStartTime || !reservation.actualEndTime) return null
+		return await createPayment(token)
 	} else {
 		throw new Error(`Reservation is already ${reservation.status}`)
 	}
 }
+
+
 
 export async function startSession(reservationId: string) {
 	const response = await db.update(reservations)
