@@ -2,9 +2,9 @@
 
 import { useRef, useEffect } from "react"
 import { useMap } from "./MapContext"
-import maplibregl from "maplibre-gl"
+import maplibregl, { LngLatBounds, LngLatLike } from "maplibre-gl"
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { DEFAULT_LAT, DEFAULT_LNG } from "@/lib/location";
+import { DEFAULT_LAT, DEFAULT_LNG, ADDIS_ABABA_BOUNDS} from "@/lib/location";
 
 interface MapRootProps {
     children?: React.ReactNode,
@@ -30,6 +30,7 @@ function MapRoot({
             container: mapContainer.current,
             style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json", 
             center,
+            maxBounds: ADDIS_ABABA_BOUNDS as [[number, number], [number, number]],
             zoom
         })
 

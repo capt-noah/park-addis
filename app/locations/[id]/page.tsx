@@ -32,6 +32,7 @@ export default async function LocationDetailsPage({ params }: PageProps) {
     );
   }
 
+  console.log(dbLocation)
   const spot = await getParkingSpotFromLocationId(id);
   const vehicles = await getVehiclesByUserId(user.id);
 
@@ -44,9 +45,8 @@ export default async function LocationDetailsPage({ params }: PageProps) {
     price: spot ? parseFloat(spot.pricePerHour) : 25,
     rating:
       dbLocation.ratingsCount && dbLocation.ratingsCount > 0
-        ? parseFloat(
-            (dbLocation.ratingsSum! / dbLocation.ratingsCount).toFixed(1),
-          ) / 10
+        ? 
+            parseFloat((Number(dbLocation.ratingsSum!) / dbLocation.ratingsCount / 10).toFixed(1))
         : 4.5,
     distance: 0,
     eta: 0,

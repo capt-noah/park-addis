@@ -33,6 +33,8 @@ export default function LocationsContainer({
   >(locationsData?.features || []);
   const [isLoading, setIsLoading] = useState(false);
 
+  const selectedLocation = displayedLocations.find((loc: ParkingFeatures) => loc.properties.id == selectedLocationId)
+
   // Sync map location to session
   useEffect(() => {
     if (mapLocation) {
@@ -44,13 +46,14 @@ export default function LocationsContainer({
     setDistanceFilter(filter);
     setIsLoading(true);
 
-    const lat = sessionLocation?.lat ?? ADDIS_ABABA_CENTER.lat;
-    const lng = sessionLocation?.lng ?? ADDIS_ABABA_CENTER.lng;
+    const lat = sessionLocation?.lat || ADDIS_ABABA_CENTER.lat;
+    const lng = sessionLocation?.lng || ADDIS_ABABA_CENTER.lng;
 
     try {
       const res = await fetch(
         `/api/locations?distance=${filter}&lat=${lat}&lng=${lng}`,
       );
+
       if (res.ok) {
         const data = await res.json();
         const features = data.locations?.features || data.locations || [];
@@ -82,7 +85,7 @@ export default function LocationsContainer({
       </div>
 
       {/* Active Session Notification (Phase C) */}
-      {activeReservation && (
+      {activeReservation && ( 
         <div className="absolute top-24 left-6 right-6 z-[500] pointer-events-none flex justify-center">
           <Link
             href="/reservations"
@@ -108,6 +111,7 @@ export default function LocationsContainer({
         <MapView
           displayedLocations={displayedLocations}
           onLocationClick={setSelectedLocationId}
+          selectedLocation={selectedLocation}
         />
       </div>
 
@@ -116,7 +120,7 @@ export default function LocationsContainer({
         {/* Filter Pills - Bottom Left above cards */}
         <div className="w-full h-[40px]">
           <div className="flex gap-2 pointer-events-auto overflow-x-auto max-w-lg w-full no-scrollbar pb-3">
-            {["All", 200, 400, 600, 3000, 4000].map((filter) => (
+            {["All", 200, 400, 600].map((filter) => (
               <button
                 key={filter}
                 onClick={() => handleFilterClick(filter as any)}

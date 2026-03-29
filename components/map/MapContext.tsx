@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 
+import { ADDIS_ABABA_CENTER } from "@/lib/location";
+
 interface Coords {
   lng: number;
   lat: number;
@@ -46,7 +48,12 @@ export function MapProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       },
       (err) => {
-        console.error("Geolocation error:", err.message);
+        // console.error("Geolocation error:", err.message);
+        setCoords({
+          lng: ADDIS_ABABA_CENTER.lng,
+          lat: ADDIS_ABABA_CENTER.lat,
+          accuracy: 10
+        })
         setIsLoading(false);
       },
       { enableHighAccuracy: true }

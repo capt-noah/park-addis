@@ -42,6 +42,7 @@ export default function ParkingLayer({ locations, onLocationClick }: any) {
                 e.stopPropagation() // Prevent map click
                 if (onLocationClickRef.current) {
                     onLocationClickRef.current(id)
+                    console.log(id)
                 }
             })
 
