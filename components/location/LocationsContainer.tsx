@@ -27,7 +27,7 @@ export default function LocationsContainer({
   const [distanceFilter, setDistanceFilter] = useState<"All" | 200 | 400 | 600>(
     "All",
   );
-  const { coords: mapLocation } = useMap();
+  const { coords: mapLocation, navigation } = useMap();
   const [displayedLocations, setDisplayedLocations] = useState<
     ParkingFeatures[]
   >(locationsData?.features || []);
@@ -85,7 +85,7 @@ export default function LocationsContainer({
       </div>
 
       {/* Active Session Notification (Phase C) */}
-      {activeReservation && ( 
+      {activeReservation && navigation.status === "IDLE" && ( 
         <div className="absolute top-24 left-6 right-6 z-[500] pointer-events-none flex justify-center">
           <Link
             href="/reservations"

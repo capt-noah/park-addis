@@ -1,76 +1,66 @@
-"use client"
+"use client";
 
 import { useEffect } from "react";
 import { useMap } from "../MapContext";
-import { getRoute, getRouteBoounds } from "@/src/services/routing.service";
-import { LngLatLike } from "maplibre-gl";
 
-export default function RouteLayer({ destination }: { destination: [number, number] | null }) {
-    const { map, coords } = useMap();
+export default function RouteLayer() {
+  const { map, navigation } = useMap();
 
-    useEffect(() => {
-        if (!map || !coords || !destination) return;
+  useEffect(() => {
+    if (!map || !map.loaded()) return;
 
-        async function drawRoute() {
+    const sourceId = "route";
+    const layerId = "route-layer";
 
-            const geometry = await getRoute(coords, destination);
-            
-            const bounds = await getRouteBoounds(geometry.coordinates)
-
-            const geojson: GeoJSON.Feature = {
+    const updateLayer = () => {
+      const geojson: GeoJSON.FeatureCollection = {
+        type: "FeatureCollection",
+        features: navigation.routeGeometry
+          ? [
+              {
                 type: "Feature",
-                geometry,
+                geometry: navigation.routeGeometry,
                 properties: {},
-            };
+              },
+            ]
+          : [],
+      };
 
-            if (!map) return;
+      if (map.getSource(sourceId)) {
+        (map.getSource(sourceId) as any).setData(geojson);
+      } else {
+        map.addSource(sourceId, {
+          type: "geojson",
+          data: geojson,
+        });
 
-            if (map.getSource("route")) {
-                (map.getSource("route") as any).setData(geojson);
-                return;
-            }
-
-            map.addSource("route", {
-                type: "geojson",
-                data: geojson,
-            })
-            
-            map.addLayer({
-                id: 'route-layer',
-                type: 'line',
-                source: 'route',
-            layout: {
+        map.addLayer({
+          id: layerId,
+          type: "line",
+          source: sourceId,
+          layout: {
             "line-join": "round",
             "line-cap": "round",
-            },
-            paint: {
-            "line-width": 3,
+          },
+          paint: {
+            "line-width": 5,
             "line-color": "#40c091",
-                },    
-            })
+            "line-opacity": 0.8,
+          },
+        });
+      }
+    };
 
-        
-        map.fitBounds(bounds as [LngLatLike, LngLatLike], {
-            padding: {top: 150, bottom: 250, left: 0, right: 0},
-            duration: 1000,
-            maxZoom: 15
-        })
+    updateLayer();
+
+    // Clean up on unmount or if navigation status becomes IDLE
+    if (navigation.status === "IDLE") {
+        if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', 'none');
+    } else {
+        if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', 'visible');
     }
-      
-        drawRoute()
 
-      return (() => {
-          if (!map || !map.loaded()) return
-          
-        if (map.getLayer("route-layer"))
-        map.removeLayer("route-layer")
+  }, [map, navigation.routeGeometry, navigation.status]);
 
-        if (map.getSource("route"))
-        map.removeSource("route")
-    
-    })
-
-  }, [map, coords, destination]);
-    
-    return null
+  return null;
 }

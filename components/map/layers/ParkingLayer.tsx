@@ -5,7 +5,7 @@ import { useMap } from "../MapContext"
 import maplibregl from "maplibre-gl"
 
 export default function ParkingLayer({ locations, onLocationClick }: any) {
-    const { map } = useMap()
+    const { map, navigation } = useMap()
     const markersRef = useRef<maplibregl.Marker[]>([])
     const onLocationClickRef = useRef(onLocationClick)
 
@@ -19,6 +19,9 @@ export default function ParkingLayer({ locations, onLocationClick }: any) {
         // Clear existing markers
         markersRef.current.forEach(marker => marker.remove())
         markersRef.current = []
+
+        // Hide markers during active navigation
+        if (navigation.status === "NAVIGATING") return;
 
         const rawFeatures = Array.isArray(locations) ? locations : (locations?.features || [])
         

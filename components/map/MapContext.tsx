@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useEffect, ReactNode, useMemo, use
 import maplibregl from "maplibre-gl";
 
 import { ADDIS_ABABA_CENTER } from "@/lib/location";
+import { NavigationState, NavigationActions, NavigationStatus } from "./navigation/NavigationTypes";
+import { useNavigationState } from "./hooks/useNavigationState";
 
 interface Coords {
   lng: number;
@@ -17,20 +19,31 @@ interface MapContextType {
   coords: Coords | null;
   locateUser: () => void;
   isLoading: boolean;
+  
+  // Navigation
+  navigation: NavigationState;
+  actions: NavigationActions;
 }
 
-export const MapContext = createContext<MapContextType>({
-  map: null,
-  setMap: () => {},
-  coords: null,
-  locateUser: () => {},
-  isLoading: true,
-});
+export const MapContext = createContext<MapContextType | null>(null);
 
 export function MapProvider({ children }: { children: ReactNode }) {
   const [map, setMap] = useState<maplibregl.Map | null>(null);
   const [coords, setCoords] = useState<Coords | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const {
+    navigation,
+    setNavigationStatus,
+    setDestination,
+    setRouteGeometry,
+    updateNavigationMetrics,
+    setBearing,
+    setUserCoords,
+    setWatchId,
+    startNavigation,
+    stopNavigation,
+  } = useNavigationState();
 
   const locateUser = useCallback(() => {
     if (typeof window === "undefined" || !navigator.geolocation) {
@@ -40,29 +53,52 @@ export function MapProvider({ children }: { children: ReactNode }) {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setCoords({
+        const newCoords = {
           lng: position.coords.longitude,
           lat: position.coords.latitude,
           accuracy: position.coords.accuracy,
-        });
+        };
+        setCoords(newCoords);
+        setUserCoords(newCoords);
         setIsLoading(false);
       },
       (err) => {
-        // console.error("Geolocation error:", err.message);
-        setCoords({
+        const defaultCoords = {
           lng: ADDIS_ABABA_CENTER.lng,
           lat: ADDIS_ABABA_CENTER.lat,
           accuracy: 10
-        })
+        };
+        setCoords(defaultCoords);
+        setUserCoords(defaultCoords);
         setIsLoading(false);
       },
       { enableHighAccuracy: true }
     );
-  }, []);
+  }, [setUserCoords]);
 
   useEffect(() => {
     locateUser();
   }, [locateUser]);
+
+  const actions = useMemo(() => ({
+    setNavigationStatus,
+    setDestination,
+    setRouteGeometry,
+    updateNavigationMetrics,
+    setBearing,
+    setUserCoords,
+    startNavigation,
+    stopNavigation,
+  }), [
+    setNavigationStatus,
+    setDestination,
+    setRouteGeometry,
+    updateNavigationMetrics,
+    setBearing,
+    setUserCoords,
+    startNavigation,
+    stopNavigation,
+  ]);
 
   const contextValue = useMemo(() => ({
     map,
@@ -70,7 +106,9 @@ export function MapProvider({ children }: { children: ReactNode }) {
     coords,
     locateUser,
     isLoading,
-  }), [map, coords, locateUser, isLoading]);
+    navigation,
+    actions,
+  }), [map, coords, locateUser, isLoading, navigation, actions]);
 
   return (
     <MapContext.Provider value={contextValue}>
@@ -79,4 +117,10 @@ export function MapProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export const useMap = () => useContext(MapContext);
+export const useMap = () => {
+  const context = useContext(MapContext);
+  if (!context) {
+    throw new Error("useMap must be used within a MapProvider");
+  }
+  return context;
+};
