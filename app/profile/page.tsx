@@ -27,11 +27,11 @@ export default async function ProfilePage() {
 
   return (
     <DashboardLayout user={user}>
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-primary mb-1">Profile Settings</h1>
-      </div>
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="mb-2">
+          <h1 className="text-2xl font-extrabold text-primary mb-1">Profile Settings</h1>
+        </div>
 
-      <div className="space-y-6 max-w-5xl">
         {/* Header Card */}
         <div className="bg-card rounded-[2rem] p-8 border border-border shadow-sm flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group transition-colors">
           <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/10 relative flex-shrink-0">

@@ -48,11 +48,16 @@ export function useNavigationState() {
     setNavigation((prev) => ({ ...prev, watchId: id }));
   }, []);
 
-  const startNavigation = useCallback(() => {
-    setNavigationStatus("NAVIGATING");
-  }, [setNavigationStatus]);
+  const previewDestination = useCallback((dest: LngLatLike) => {
+    setNavigation((prev) => ({
+      ...prev,
+      status: "PREVIEW",
+      destination: dest,
+      routeGeometry: null, // Clear old route
+    }));
+  }, []);
 
-  const stopNavigation = useCallback(() => {
+  const clearNavigation = useCallback(() => {
     setNavigation((prev) => {
       if (prev.watchId !== null) {
         navigator.geolocation.clearWatch(prev.watchId);
@@ -60,12 +65,20 @@ export function useNavigationState() {
       return {
         ...prev,
         status: "IDLE",
-        routeGeometry: null,
         destination: null,
+        routeGeometry: null,
+        remainingDistance: null,
+        remainingDuration: null,
         watchId: null,
       };
     });
   }, []);
+
+  const startNavigation = useCallback(() => {
+    setNavigation((prev) => ({ ...prev, status: "NAVIGATING" }));
+  }, []);
+
+  const stopNavigation = clearNavigation;
 
   return {
     navigation,
@@ -76,6 +89,8 @@ export function useNavigationState() {
     setBearing,
     setUserCoords,
     setWatchId,
+    previewDestination,
+    clearNavigation,
     startNavigation,
     stopNavigation,
   };

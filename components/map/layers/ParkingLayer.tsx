@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from "react"
 import { useMap } from "../MapContext"
+import { useSession } from "../../session/AppSessionProvider"
 import maplibregl from "maplibre-gl"
 
 export default function ParkingLayer({ locations, onLocationClick }: any) {
     const { map, navigation } = useMap()
+    const { activeReservation, isLoading: sessionLoading } = useSession()
     const markersRef = useRef<maplibregl.Marker[]>([])
     const onLocationClickRef = useRef(onLocationClick)
 
@@ -14,18 +16,31 @@ export default function ParkingLayer({ locations, onLocationClick }: any) {
     }, [onLocationClick])
 
     useEffect(() => {
-        if (!map) return
+        if (!map || sessionLoading) return
 
         // Clear existing markers
         markersRef.current.forEach(marker => marker.remove())
         markersRef.current = []
 
-        // Hide markers during active navigation
-        if (navigation.status === "NAVIGATING") return;
+        let rawFeatures = Array.isArray(locations) ? locations : (locations?.features || [])
 
-        const rawFeatures = Array.isArray(locations) ? locations : (locations?.features || [])
-        
-        console.log("ParkingLayer (Markers): Rendering", rawFeatures.length, "markers")
+        // Hiding/Filtering logic: Hide other pins if reservation exists or navigating
+        if (activeReservation || navigation.status === "NAVIGATING" || navigation.status === "ARRIVED") {
+            rawFeatures = rawFeatures.filter((f: any) => {
+                const name = f.properties.name || f.properties.p_name;
+                // If we have an active reservation, only show that one
+                if (activeReservation) return name === activeReservation.locationName;
+                // If navigating (without active reservation context), only show the one matching our current destination coords
+                if (navigation.destination && navigation.status === "NAVIGATING") {
+                    const dest = navigation.destination as { lng: number, lat: number };
+                    return Math.abs(f.geometry.coordinates[0] - dest.lng) < 0.00001 && 
+                           Math.abs(f.geometry.coordinates[1] - dest.lat) < 0.00001;
+                }
+                return false;
+            });
+        }
+
+        console.log("ParkingLayer: Rendering", rawFeatures.length, "markers");
 
         rawFeatures.forEach((feature: any) => {
             const coords = feature.geometry.coordinates as [number, number]
@@ -42,19 +57,17 @@ export default function ParkingLayer({ locations, onLocationClick }: any) {
 
             // Click handler
             el.addEventListener('click', (e) => {
-                e.stopPropagation() // Prevent map click
+                e.stopPropagation()
                 if (onLocationClickRef.current) {
                     onLocationClickRef.current(id)
-                    console.log(id)
                 }
             })
 
-            // Add marker to map
             try {
                 const marker = new maplibregl.Marker({ 
                     element: el, 
                     anchor: 'bottom',
-                    offset: [0, -16] // Shift up so the terminal green dot (16px below bubble) is at the coordinates
+                    offset: [0, -16]
                 })
                 .setLngLat(coords)
                 .addTo(map)
@@ -69,7 +82,7 @@ export default function ParkingLayer({ locations, onLocationClick }: any) {
             markersRef.current.forEach(marker => marker.remove())
             markersRef.current = []
         }
-    }, [map, locations])
+    }, [map, locations, activeReservation, navigation.status, navigation.destination])
 
     return null
 }

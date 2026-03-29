@@ -1,6 +1,7 @@
 "use client";
 
 import { MapPin, Clock, Calendar, Ticket, ChevronRight } from "lucide-react";
+import Link from "next/link";
 import Image from "next/image";
 
 export function ReservationCard({ status, name, address, startTime, endTime, price, active, image, onViewTicket, onCancel }: any) {
@@ -64,33 +65,51 @@ export function ReservationCard({ status, name, address, startTime, endTime, pri
            </div>
         </div>
 
-        <div className="mt-auto flex justify-between items-center pt-4 border-t border-border">
-           {active ? (
-             <div className="flex items-center gap-4 w-full justify-between">
-               <button 
-                 onClick={onCancel}
-                 className="px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-red-50/50 hover:text-red-600 hover:border-red-200 transition-all text-[10px] font-bold"
-               >
-                 Cancel Reservation
-               </button>
-               <button 
-                 onClick={onViewTicket}
-                 className="bg-primary text-white px-6 py-3 rounded-xl font-bold text-[10px] flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95"
-               >
-                 <Ticket className="w-4 h-4" /> View Ticket
-               </button>
-             </div>
-           ) : (
-             <div className="flex items-center gap-4 w-full justify-end">
-               <button 
-                 onClick={onViewTicket}
-                 className="bg-[#004D40] text-white px-6 py-3 rounded-xl font-bold text-[10px] flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-[#004D40]/20 hover:scale-[1.02] active:scale-95"
-               >
-                 View Details <ChevronRight className="w-4 h-4" />
-               </button>
-             </div>
-           )}
-        </div>
+         <div className="mt-auto flex justify-between items-center pt-4 border-t border-border">
+            {active ? (
+              <div className="flex items-center gap-3 w-full justify-between">
+                <button 
+                  onClick={onCancel}
+                  className="px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-red-50/50 hover:text-red-600 hover:border-red-200 transition-all text-[10px] font-bold"
+                >
+                  Cancel
+                </button>
+                <div className="flex items-center gap-2">
+                  {(status?.toUpperCase() === "ACTIVE" || status?.toUpperCase() === "RESERVED") && (
+                    <Link
+                      href={`/locations?selected=${encodeURIComponent(name)}`}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-primary/20 text-primary hover:bg-primary/5 transition-all text-[10px] font-bold"
+                    >
+                      <MapPin className="w-3.5 h-3.5" /> Map
+                    </Link>
+                  )}
+                  <button 
+                    onClick={onViewTicket}
+                    className="bg-primary text-white px-5 py-2.5 rounded-xl font-bold text-[10px] flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95"
+                  >
+                    <Ticket className="w-3.5 h-3.5" /> View Ticket
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 w-full justify-end">
+                {(status?.toUpperCase() === "ACTIVE" || status?.toUpperCase() === "RESERVED") && (
+                  <Link
+                    href={`/locations?selected=${encodeURIComponent(name)}`}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-muted-foreground hover:bg-muted transition-all text-[10px] font-bold"
+                  >
+                    <MapPin className="w-3.5 h-3.5" /> View on Map
+                  </Link>
+                )}
+                <button 
+                  onClick={onViewTicket}
+                  className="bg-[#004D40] text-white px-5 py-2.5 rounded-xl font-bold text-[10px] flex items-center gap-2 hover:opacity-90 transition-all shadow-xl shadow-[#004D40]/20 hover:scale-[1.02] active:scale-95"
+                >
+                  Details <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+         </div>
       </div>
     </div>
   );

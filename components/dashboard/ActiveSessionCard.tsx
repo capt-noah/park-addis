@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Clock, MapPin, Car, Plus, QrCode } from "lucide-react";
 import { TicketModal } from "@/components/reservations/TicketModal";
 import { ExtendSessionModal } from "./ExtendSessionModal";
@@ -59,10 +60,17 @@ export function ActiveSessionCard({ reservation }: { reservation: any }) {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3 shrink-0">
+            <Link
+              href={`/locations?selected=${encodeURIComponent(reservation.locationName)}`}
+              className="flex items-center justify-center gap-2 px-4 py-3 min-w-[100px] rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
+            >
+              <MapPin size={16} />
+              Map
+            </Link>
             {!isReserved && (
               <button 
                 onClick={() => setShowExtendModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-3 min-w-[120px] rounded-xl bg-emerald-50 text-[#004D40] font-bold text-sm border border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200 transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 px-4 py-3 min-w-[100px] rounded-xl bg-emerald-50 text-[#004D40] font-bold text-sm border border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200 transition-all active:scale-95"
               >
                 <Plus size={16} strokeWidth={3} />
                 Extend

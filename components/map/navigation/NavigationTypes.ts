@@ -22,6 +22,8 @@ export interface NavigationActions {
   updateNavigationMetrics: (distance: number, duration: number) => void;
   setBearing: (bearing: number) => void;
   setUserCoords: (coords: { lng: number; lat: number; accuracy?: number } | null) => void;
+  previewDestination: (dest: LngLatLike) => void;
+  clearNavigation: () => void;
   startNavigation: () => void;
   stopNavigation: () => void;
 }

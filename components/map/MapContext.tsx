@@ -41,6 +41,8 @@ export function MapProvider({ children }: { children: ReactNode }) {
     setBearing,
     setUserCoords,
     setWatchId,
+    previewDestination,
+    clearNavigation,
     startNavigation,
     stopNavigation,
   } = useNavigationState();
@@ -87,6 +89,8 @@ export function MapProvider({ children }: { children: ReactNode }) {
     updateNavigationMetrics,
     setBearing,
     setUserCoords,
+    previewDestination,
+    clearNavigation,
     startNavigation,
     stopNavigation,
   }), [
@@ -96,6 +100,8 @@ export function MapProvider({ children }: { children: ReactNode }) {
     updateNavigationMetrics,
     setBearing,
     setUserCoords,
+    previewDestination,
+    clearNavigation,
     startNavigation,
     stopNavigation,
   ]);

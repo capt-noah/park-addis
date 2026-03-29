@@ -1,7 +1,7 @@
 export interface OSRMRouteResponse {
   code: string;
   routes: {
-    geometry: string; // polyline6
+    geometry: GeoJSON.LineString;
     duration: number;
     distance: number;
     legs: any[];

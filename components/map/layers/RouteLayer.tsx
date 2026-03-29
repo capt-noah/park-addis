@@ -1,18 +1,50 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useMap } from "../MapContext";
 
 export default function RouteLayer() {
   const { map, navigation } = useMap();
+  const sourceId = "route-line-source";
+  const layerId = "route-line-layer";
+  const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (!map || !map.loaded()) return;
+    if (!map) return;
 
-    const sourceId = "route";
-    const layerId = "route-layer";
+    const addLayer = () => {
+      if (!map.getSource(sourceId)) {
+        console.log("RouteLayer: Initializing source and layer");
+        map.addSource(sourceId, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
 
-    const updateLayer = () => {
+        map.addLayer({
+          id: layerId,
+          type: "line",
+          source: sourceId,
+          layout: {
+            "line-join": "round",
+            "line-cap": "round",
+            "visibility": "none"
+          },
+          paint: {
+            "line-width": 4,
+            "line-color": "#10B981",
+            "line-opacity": 0.8,
+          },
+        });
+        isInitialized.current = true;
+        // Trigger an update immediately after adding
+        updateData();
+      }
+    };
+
+    const updateData = () => {
+      const source = map.getSource(sourceId);
+      if (!source) return;
+
       const geojson: GeoJSON.FeatureCollection = {
         type: "FeatureCollection",
         features: navigation.routeGeometry
@@ -26,38 +58,19 @@ export default function RouteLayer() {
           : [],
       };
 
-      if (map.getSource(sourceId)) {
-        (map.getSource(sourceId) as any).setData(geojson);
-      } else {
-        map.addSource(sourceId, {
-          type: "geojson",
-          data: geojson,
-        });
-
-        map.addLayer({
-          id: layerId,
-          type: "line",
-          source: sourceId,
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
-          paint: {
-            "line-width": 5,
-            "line-color": "#40c091",
-            "line-opacity": 0.8,
-          },
-        });
-      }
+      (source as any).setData(geojson);
+      map.setLayoutProperty(layerId, 'visibility', (navigation.status === "IDLE" || !navigation.routeGeometry) ? 'none' : 'visible');
     };
 
-    updateLayer();
-
-    // Clean up on unmount or if navigation status becomes IDLE
-    if (navigation.status === "IDLE") {
-        if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', 'none');
+    if (map.isStyleLoaded()) {
+      addLayer();
     } else {
-        if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', 'visible');
+      map.once('style.load', addLayer);
+    }
+
+    // Always try to update if initialized
+    if (isInitialized.current) {
+      updateData();
     }
 
   }, [map, navigation.routeGeometry, navigation.status]);

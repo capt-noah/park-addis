@@ -1,16 +1,20 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
 import { Search, Bell, Sun, Moon } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 
+import { useSession } from "./session/AppSessionProvider";
+
 export function DashboardLayout({ children, title, user }: { children: React.ReactNode; title?: string; user?: {fullName: string, email: string, role: string, userId: string} }) {
   const { theme, toggleTheme } = useTheme();
+  const { isSidebarCollapsed } = useSession();
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
       <Sidebar user={user} />
-      <div className="pl-60">
+      <div className={`transition-all duration-300 ${isSidebarCollapsed ? "ml-20" : "ml-60"}`}>
         {/* Top Header */}
         <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6 sticky top-0 z-30 font-sans transition-colors duration-300">
           <div className="w-full max-w-lg relative group">

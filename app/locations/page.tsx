@@ -37,13 +37,8 @@ export default async function LocationsPage() {
   console.log(locations);
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <Sidebar user={user} />
-      <div className="w-full ml-0 md:ml-60 relative h-screen overflow-hidden">
-        <MapProvider>
-          <LocationsContainer locationsData={locations} />
-        </MapProvider>
-      </div>
-    </div>
+    <LocationsLayout user={user} locations={locations} />
   );
 }
+
+import LocationsLayout from "@/components/location/LocationsLayout";

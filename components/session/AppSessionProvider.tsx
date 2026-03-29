@@ -27,6 +27,8 @@ interface SessionContextType {
   setUserLocation: (loc: UserLocation) => void;
   selectedLocationId: string | null;
   setSelectedLocationId: (id: string | null) => void;
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: (collapsed: boolean) => void;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
@@ -36,6 +38,22 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Persistence for sidebar state
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    if (saved !== null) {
+      setIsSidebarCollapsed(saved === "true");
+    }
+    setMounted(true);
+  }, []);
+
+  const handleSetSidebarCollapsed = (collapsed: boolean) => {
+    setIsSidebarCollapsed(collapsed);
+    localStorage.setItem("sidebar-collapsed", String(collapsed));
+  };
 
   const fetchActiveReservation = useCallback(async () => {
     try {
@@ -58,6 +76,10 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
     fetchActiveReservation();
   }, [fetchActiveReservation]);
 
+  if (!mounted) {
+    return <div className="min-h-screen bg-background opacity-0" />;
+  }
+
   return (
     <SessionContext.Provider value={{ 
       activeReservation, 
@@ -66,7 +88,9 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
       userLocation,
       setUserLocation,
       selectedLocationId,
-      setSelectedLocationId
+      setSelectedLocationId,
+      isSidebarCollapsed,
+      setIsSidebarCollapsed: handleSetSidebarCollapsed
     }}>
       {children}
     </SessionContext.Provider>
