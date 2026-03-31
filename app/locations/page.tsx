@@ -6,7 +6,10 @@ import LocationsContainer from "@/components/location/LocationsContainer";
 import { DEFAULT_LAT, DEFAULT_LNG, DEFAULT_RANGE } from "@/lib/location";
 import { MapProvider } from "@/components/map/MapContext";
 
+import { redirect } from "next/navigation";
+
 export default async function LocationsPage() {
+
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("sessionId")?.value;
 

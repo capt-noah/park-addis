@@ -161,7 +161,7 @@ export default async function ProfilePage() {
 
           <div className="p-8 space-y-8">
             {userVehicles.length > 0 ? (
-              userVehicles.map((vehicle, idx) => (
+              userVehicles.map((vehicle: any, idx: number) => (
                 <div
                   key={vehicle.id}
                   className={`${idx !== userVehicles.length - 1 ? "border-b border-border pb-8" : ""}`}
