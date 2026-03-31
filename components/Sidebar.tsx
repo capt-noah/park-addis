@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, CalendarDays, User, Settings, LogOut, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutDashboard, CalendarDays, User, Settings, LogOut, MapPin, ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import { useSession } from "@/components/session/AppSessionProvider";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   { icon: MapPin, label: "Locations", href: "/locations" },
   { icon: CalendarDays, label: "My Reservations", href: "/reservations", badge: true },
+  { icon: Wallet, label: "Wallet", href: "/wallet" },
   { icon: User, label: "Profile", href: "/profile" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];

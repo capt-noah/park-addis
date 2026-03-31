@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Sidebar } from "./Sidebar";
-import { Search, Bell, Sun, Moon } from "lucide-react";
+import { Search, Bell, Sun, Moon, Wallet } from "lucide-react";
 import { useTheme } from "./ThemeContext";
 
 import { useSession } from "./session/AppSessionProvider";
@@ -27,6 +27,16 @@ export function DashboardLayout({ children, title, user }: { children: React.Rea
           </div>
           
           <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center bg-muted rounded-xl px-3 py-1.5 border border-border">
+              <div className="flex flex-col mr-3">
+                <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-bold leading-none mb-0.5">Balance</span>
+                <span className="text-[11px] font-bold text-foreground leading-none">ETB 450.00</span>
+              </div>
+              <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                <Wallet className="w-3.5 h-3.5 text-white" />
+              </div>
+            </div>
+
             <button 
               onClick={toggleTheme}
               className="p-2 rounded-xl bg-muted hover:bg-muted/80 text-foreground transition-all"

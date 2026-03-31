@@ -75,6 +75,37 @@ CREATE TABLE payments (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE wallets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    balance DECIMAL(12,2) NOT NULL,
+    status TEXT NOT NULL DEFAULT('ACTIVE')
+        CHECK (status IN ('ACTIVE', 'FROZEN')),
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+)
+
+CREATE TABLE wallet_transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    wallet_id UUID REFERENCES wallets(id) ON DELETE CASCADE,
+    type TEXT NOT NULL
+        CHECK (type IN ('TOPUP', 'RESERVATION_HOLD', 'RESERVATION_CHARGE', 'REFUND', 'PAYMENT', 'ADJUSTMENT')),
+    amount DECIMAL(12, 2) NOT NULL,
+    status TEXT NOT NULL
+        CHECK (status IN ('PENDING', 'PROCESSING', 'SUCCESS', 'FAILED', 'CANCELLED', 'EXPIRED')),
+    reference_id UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    completed_at TIMESTAMPTZ DEFAULT NOW()
+)
+
+CREATE TABLE reservation_payments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    reservation_id UUID REFERENCES reservations(id) ON DELETE CASCADE,
+    wallet_transaction_id UUID REFERENCES wallet_transactions(id) ON DELETE CASCADE,
+    amount DECIMAL(12, 2) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+)
+
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX idx_reservations_user_id ON reservations(user_id);
 CREATE INDEX idx_reservations_spot_id ON reservations(spot_id);

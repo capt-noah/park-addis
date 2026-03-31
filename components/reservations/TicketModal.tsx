@@ -16,17 +16,17 @@ export function TicketModal({ reservation, onClose }: { reservation: any; onClos
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="relative w-full max-w-[360px] bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+      <div className="relative w-full max-w-[360px] bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border-0 dark:border dark:border-slate-800/80 animate-in zoom-in-95 duration-300">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 bg-slate-100/80 hover:bg-slate-200 text-slate-400 hover:text-slate-600 rounded-full transition-colors z-20"
+          className="absolute top-5 right-5 p-2 bg-slate-100/80 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full transition-colors z-20"
         >
           <X size={16} strokeWidth={3} />
         </button>
 
         {/* Top: Branding + QR */}
-        <div className="pt-8 pb-6 px-8 flex flex-col items-center border-b border-dashed border-slate-200 relative">
+        <div className="pt-8 pb-6 px-8 flex flex-col items-center border-b border-dashed border-slate-200 dark:border-slate-800/80 relative">
           <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
           <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
 
@@ -34,20 +34,20 @@ export function TicketModal({ reservation, onClose }: { reservation: any; onClos
             <div className="w-8 h-8 bg-[#004D40] rounded-lg flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-xl">P</span>
             </div>
-            <h1 className="text-xl font-extrabold tracking-tight text-[#004D40]">ParkAddis</h1>
+            <h1 className="text-xl font-extrabold tracking-tight text-[#004D40] dark:text-emerald-400">ParkAddis</h1>
           </div>
 
           {/* Status pill */}
           {isCompletedPaid && (
-            <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100">
-              <CheckCircle2 size={13} className="text-emerald-600" />
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">Transaction Successful</span>
+            <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40">
+              <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400" />
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Transaction Successful</span>
             </div>
           )}
 
           {/* QR Code */}
           <div className="z-10">
-            <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100 shadow-inner">
+            <div className="bg-slate-50 dark:bg-white p-4 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-inner">
               <QRCodeSVG
                 value={reservation.qrToken || "park-addis"}
                 size={120}
@@ -58,7 +58,7 @@ export function TicketModal({ reservation, onClose }: { reservation: any; onClos
             </div>
           </div>
 
-          <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+          <p className="mt-3 text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-[0.2em]">
             {isReserved        && "Scan at Entrance"}
             {isActive          && "Scan to Exit"}
             {isCompletedUnpaid && "Session Ended"}
@@ -99,22 +99,22 @@ function ReservedDetails({ reservation, onClose }: any) {
     <>
       <div className="px-8 py-6 space-y-5 flex-1">
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Parking Location</p>
-          <h3 className="text-base font-bold text-slate-900">{reservation.locationName}</h3>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Parking Location</p>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">{reservation.locationName}</h3>
         </div>
         <div className="grid grid-cols-2 gap-5">
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plate Number</p>
-            <p className="text-sm font-semibold text-slate-700">{reservation.plateNumber || "N/A"}</p>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Plate Number</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{reservation.plateNumber || "N/A"}</p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
-            <p className="text-sm font-semibold text-slate-700">{dateStr}</p>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Date</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{dateStr}</p>
           </div>
         </div>
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Time Slot</p>
-          <div className="flex items-center gap-2 text-[#004D40]">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Time Slot</p>
+          <div className="flex items-center gap-2 text-[#004D40] dark:text-emerald-500">
             <Clock size={15} />
             <p className="text-sm font-bold">{timeStr}</p>
           </div>
@@ -173,40 +173,40 @@ function ActiveDetails({ reservation, onClose }: any) {
     <>
       <div className="px-8 py-5 space-y-4 flex-1">
         {/* Countdown + progress */}
-        <div className="bg-[#004D40]/5 rounded-2xl p-4 border border-[#004D40]/10">
+        <div className="bg-[#004D40]/5 dark:bg-[#10B981]/5 rounded-2xl p-4 border border-[#004D40]/10 dark:border-[#10B981]/10">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-[#004D40]">
+            <div className="flex items-center gap-2 text-[#004D40] dark:text-emerald-500">
               <Timer size={15} />
               <span className="text-[10px] font-bold uppercase tracking-wider">Time Remaining</span>
             </div>
-            <span className="font-mono text-lg font-extrabold text-slate-900 tabular-nums">{countdown}</span>
+            <span className="font-mono text-lg font-extrabold text-slate-900 dark:text-white tabular-nums">{countdown}</span>
           </div>
-          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#004D40] rounded-full transition-all duration-1000"
+              className="h-full bg-[#004D40] dark:bg-emerald-500 rounded-full transition-all duration-1000"
               style={{ width: `${progress}%` }}
             />
           </div>
           <div className="flex justify-between mt-1.5">
-            <span className="text-[9px] text-slate-400 font-medium">Entry: {fmt(startTime)}</span>
-            <span className="text-[9px] text-slate-400 font-medium">Exit by: {fmt(endTime)}</span>
+            <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium tracking-tight">Entry: {fmt(startTime)}</span>
+            <span className="text-[9px] text-slate-400 dark:text-slate-500 font-medium tracking-tight">Exit by: {fmt(endTime)}</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Location</p>
-            <p className="text-xs font-bold text-slate-700 truncate">{reservation.locationName}</p>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Location</p>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{reservation.locationName}</p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plate</p>
-            <p className="text-xs font-bold text-slate-700">{reservation.plateNumber || "N/A"}</p>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Plate</p>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{reservation.plateNumber || "N/A"}</p>
           </div>
         </div>
 
-          <div className="flex justify-between items-center bg-slate-50 rounded-2xl px-5 py-3 border border-slate-100">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cost So Far</p>
-            <p className="text-2xl font-extrabold text-slate-900">ETB {costSoFar}</p>
+          <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/60 rounded-2xl px-5 py-3 border border-slate-100 dark:border-slate-700/50">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Cost So Far</p>
+            <p className="text-2xl font-extrabold text-slate-900 dark:text-white">ETB {costSoFar}</p>
           </div>
       </div>
       <div className="px-8 pb-10 pt-2">
@@ -248,48 +248,48 @@ function UnpaidDetails({ reservation, onClose }: any) {
         <div className="relative z-10 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
-              <p className="text-xs font-bold text-slate-700">{dateStr}</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Date</p>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{dateStr}</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Plate Number</p>
-              <p className="text-xs font-bold text-slate-700">{reservation.plateNumber || "N/A"}</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Plate Number</p>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{reservation.plateNumber || "N/A"}</p>
             </div>
           </div>
 
-          <div className="pb-3 border-b border-slate-100">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Location</p>
-            <p className="text-xs font-bold text-slate-700 truncate">{reservation.locationName}</p>
+          <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Location</p>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{reservation.locationName}</p>
           </div>
 
-          <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-            <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-              <Clock size={16} className="text-[#004D40]" />
+          <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+            <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+              <Clock size={16} className="text-[#004D40] dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-slate-900">{timeStr}</p>
-              <p className="text-[10px] text-slate-500 font-medium">Actual Parking Time</p>
+              <p className="text-[11px] font-bold text-slate-900 dark:text-white">{timeStr}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Actual Parking Time</p>
             </div>
           </div>
 
           {/* Fee Breakdown */}
-          <div className="bg-red-50/30 p-4 rounded-2xl border border-red-100/50">
+          <div className="bg-red-50/30 dark:bg-red-950/20 p-4 rounded-2xl border border-red-100/50 dark:border-red-900/20">
             <div className="space-y-2">
               <div className="flex justify-between items-baseline">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60">Parking ({durationDisplay})</span>
-                <span className="text-xs font-bold text-slate-600">ETB {parkingFee.toFixed(2)}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60 dark:text-red-400/60">Parking ({durationDisplay})</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {parkingFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60">Reservation Fee</span>
-                <span className="text-xs font-bold text-slate-600">ETB {resFee.toFixed(2)}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60 dark:text-red-400/60">Reservation Fee</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {resFee.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center pb-2 border-b border-red-100/30">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60">Service Fee</span>
-                <span className="text-xs font-bold text-slate-600">ETB {svcFee.toFixed(2)}</span>
+              <div className="flex justify-between items-center pb-2 border-b border-red-100/30 dark:border-red-900/20">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60 dark:text-red-400/60">Service Fee</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {svcFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pt-1">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-red-600">Total Due</span>
-                <span className="text-xl font-extrabold text-red-600">ETB {totalDue}</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-red-600 dark:text-red-400">Total Due</span>
+                <span className="text-xl font-extrabold text-red-600 dark:text-red-400">ETB {totalDue}</span>
               </div>
             </div>
           </div>
@@ -332,51 +332,51 @@ function PaidDetails({ reservation, onClose }: any) {
         <div className="relative z-10 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
-              <p className="text-xs font-bold text-slate-700">{dateStr}</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Date</p>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{dateStr}</p>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Time</p>
-              <p className="text-xs font-bold text-slate-700">{timeStr}</p>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Time</p>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{timeStr}</p>
             </div>
           </div>
-          <div className="space-y-2 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-                <Car size={17} className="text-[#004D40]" />
+          <div className="space-y-2 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+              <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <Car size={17} className="text-[#004D40] dark:text-emerald-400" />
               </div>
               <div className="flex-1 overflow-hidden">
-                <p className="text-[11px] font-bold text-slate-900 truncate">Plate: {reservation.plateNumber || "N/A"}</p>
-                <p className="text-[9px] text-slate-500 uppercase tracking-wider">{reservation.locationName}</p>
+                <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">Plate: {reservation.plateNumber || "N/A"}</p>
+                <p className="text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">{reservation.locationName}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-                <CreditCard size={17} className="text-[#004D40]" />
+            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+              <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                <CreditCard size={17} className="text-[#004D40] dark:text-emerald-400" />
               </div>
               <div className="flex-1">
-                <p className="text-[11px] font-bold text-slate-900">ParkAddis Wallet</p>
-                <p className="text-[9px] text-slate-500">Paid securely</p>
+                <p className="text-[11px] font-bold text-slate-900 dark:text-white">ParkAddis Wallet</p>
+                <p className="text-[9px] text-slate-500 dark:text-slate-400">Paid securely</p>
               </div>
             </div>
           </div>
           {/* Mini receipt summary */}
-          <div className="bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100">
+          <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
             <div className="flex justify-between items-baseline mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/60">Parking ({durationDisplay})</span>
-              <span className="text-xs font-bold text-slate-600">ETB {parkingFee.toFixed(2)}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Parking ({durationDisplay})</span>
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {parkingFee.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/60">Reservation Fee</span>
-              <span className="text-xs font-bold text-slate-600">ETB {resFee.toFixed(2)}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Reservation Fee</span>
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {resFee.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between items-center pb-2 border-b border-emerald-100/50">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60">Service Fee</span>
-              <span className="text-xs font-bold text-slate-600">ETB {svcFee.toFixed(2)}</span>
+            <div className="flex justify-between items-center pb-2 border-b border-emerald-100/50 dark:border-emerald-900/20">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Service Fee</span>
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {svcFee.toFixed(2)}</span>
             </div>
             <div className="flex justify-between items-center pt-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#004D40]">Total Paid</span>
-              <span className="text-xl font-extrabold text-slate-900">ETB {totalPaid}</span>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#004D40] dark:text-emerald-500">Total Paid</span>
+              <span className="text-xl font-extrabold text-slate-900 dark:text-white">ETB {totalPaid}</span>
             </div>
           </div>
         </div>
@@ -409,33 +409,33 @@ function CancelledDetails({ reservation, onClose }: any) {
         </div>
 
         <div className="relative z-10 space-y-4">
-          <div className="flex items-center gap-3 bg-[#004D40]/5 p-3 rounded-2xl border border-[#004D40]/10">
-            <div className="p-2 bg-white rounded-xl shadow-sm border border-[#004D40]/10">
-              <Clock size={16} className="text-[#004D40] opacity-80" />
+          <div className="flex items-center gap-3 bg-[#004D40]/5 dark:bg-emerald-500/10 p-3 rounded-2xl border border-[#004D40]/10 dark:border-emerald-500/20">
+            <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-[#004D40]/10 dark:border-emerald-500/20">
+              <Clock size={16} className="text-[#004D40] dark:text-emerald-400 opacity-80" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-[#004D40]">{dateStr}</p>
-              <p className="text-[10px] text-[#004D40]/70 font-medium">{timeStr}</p>
+              <p className="text-[11px] font-bold text-[#004D40] dark:text-emerald-400">{dateStr}</p>
+              <p className="text-[10px] text-[#004D40]/70 dark:text-emerald-400/70 font-medium">{timeStr}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-[#004D40]/5 p-3 rounded-2xl border border-[#004D40]/10">
-            <div className="p-2 bg-white rounded-xl shadow-sm border border-[#004D40]/10">
-              <Car size={16} className="text-[#004D40] opacity-80" />
+          <div className="flex items-center gap-3 bg-[#004D40]/5 dark:bg-emerald-500/10 p-3 rounded-2xl border border-[#004D40]/10 dark:border-emerald-500/20">
+            <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-[#004D40]/10 dark:border-emerald-500/20">
+              <Car size={16} className="text-[#004D40] dark:text-emerald-400 opacity-80" />
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-[11px] font-bold text-[#004D40] truncate">{reservation.locationName}</p>
-              <p className="text-[10px] text-[#004D40]/70 font-medium">{reservation.plateNumber || "N/A"}</p>
+              <p className="text-[11px] font-bold text-[#004D40] dark:text-emerald-400 truncate">{reservation.locationName}</p>
+              <p className="text-[10px] text-[#004D40]/70 dark:text-emerald-400/70 font-medium">{reservation.plateNumber || "N/A"}</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 bg-red-50/50 p-3 rounded-2xl border border-red-100">
-            <div className="p-2 bg-white rounded-xl shadow-sm border border-red-100">
+          <div className="flex items-center gap-3 bg-red-50/50 dark:bg-red-900/10 p-3 rounded-2xl border border-red-100 dark:border-red-800/40">
+            <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-red-100 dark:border-red-800/40">
               <XCircle size={16} className="text-red-400" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-red-600/80 uppercase tracking-widest">Status</p>
-              <p className="text-[10px] text-red-500/80 font-medium">Reservation Cancelled</p>
+              <p className="text-[11px] font-bold text-red-600/80 dark:text-red-400/80 uppercase tracking-widest">Status</p>
+              <p className="text-[10px] text-red-500/80 dark:text-red-400/80 font-medium">Reservation Cancelled</p>
             </div>
           </div>
         </div>
