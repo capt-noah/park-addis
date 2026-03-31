@@ -11,7 +11,7 @@ import {
   Minus,
   Loader2,
 } from "lucide-react";
-import { extendReservation } from "@/backend/src/services/reservation.service";
+
 
 export function ExtendSessionModal({
   reservation,
@@ -51,12 +51,22 @@ export function ExtendSessionModal({
   const handleExtend = async () => {
     setIsExtending(true);
     try {
-      const success = await extendReservation(reservation.id, parsedMins);
-      if (success) {
+      const response = await fetch("/api/reservation/extend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reservationId: reservation.id,
+          extraMinutes: parsedMins,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         alert(`Session extended by ${parsedMins} minutes!`);
         onClose();
       } else {
-        alert("Failed to extend session");
+        alert(data.error || "Failed to extend session");
       }
     } catch (err: any) {
       alert(err.message || "An unexpected error occurred");

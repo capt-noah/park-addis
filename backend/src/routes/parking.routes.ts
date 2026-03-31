@@ -1,5 +1,5 @@
 import express from "express"
-import { getParkingLocationsJson, getParkingLocationsWithinRange, getParkingSpot } from "../services/parking.service"
+import { getParkingLocation, getParkingLocationsJson, getParkingLocationsWithinRange, getParkingSpot, getParkingSpotFromLocationId } from "../services/parking.service"
 import { authMiddleware } from "../middleware/auth.middleware"
 
 
@@ -32,6 +32,17 @@ parkingRouter.get('/locations', async (req, res) => {
     if (!locations) return res.status(401).json({ error: "Locations Not Found" })
     
     return res.status(200).json({locations})
+})
+
+parkingRouter.post('/location', async (req, res) => {
+    const { id } = req.body
+    
+    const location = await getParkingLocation(id)
+    const spot = await getParkingSpotFromLocationId(id)
+
+    if (!location) return res.status(301).json({ error: "Unable to find Location" })
+    
+    return res.status(200).json({ location, spot })
 })
 
 export default parkingRouter

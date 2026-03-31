@@ -7,6 +7,7 @@ import parkingRouter from "./routes/parking.routes";
 import reservationRouter from "./routes/reservation.routes";
 import paymentRouter from "./routes/payment.routes"
 import walletRouter from "./routes/wallet.routes";
+import vehicleRouter from "./routes/vehicle.routes";
 
 app.use(cors({
   origin: "http://localhost:3000",
@@ -20,6 +21,7 @@ app.use('/api/parking', parkingRouter)
 app.use('/api/reservation', reservationRouter)
 app.use('/api/payment', paymentRouter)
 app.use('/api/wallet', walletRouter)
+app.use('/api/vehicle', vehicleRouter)
 
 app.get('/', (req, res) => {
     return res.send("it actually works gng!!")

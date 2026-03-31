@@ -11,8 +11,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
-import { findUserBySession } from "@/backend/src/services/auth.service";
-import { getVehiclesByUserId } from "@/backend/src/services/cars.service";
+
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
@@ -21,13 +20,26 @@ export default async function ProfilePage() {
   const sessionId = cookieStore.get("sessionId")?.value;
   if (!sessionId) redirect("/login");
 
-  const dbUser = await findUserBySession(sessionId);
+  // Fetch User
+  const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
+    headers: { Cookie: `sessionId=${sessionId}` }
+  });
+
+  if (!userRes.ok) redirect("/login");
+  const userData = await userRes.json();
+  const dbUser = userData.userId ? userData : null;
   if (!dbUser) redirect("/login");
 
-  const userVehicles = await getVehiclesByUserId(dbUser.id);
+  // Fetch Vehicles
+  const vehiclesRes = await fetch(`${process.env.BACKEND_URL}/api/vehicle/user`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: dbUser.userId })
+  });
+  const userVehicles = await vehiclesRes.json();
 
   const user = {
-    userId: dbUser.id,
+    userId: dbUser.userId,
     fullName: dbUser.fullName,
     email: dbUser.email,
     phoneNumber: dbUser.phoneNumber,

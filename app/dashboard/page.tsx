@@ -1,5 +1,5 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { findUserBySession } from "@/backend/src/services/auth.service";
+
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
@@ -14,10 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { cookies } from "next/headers";
-import {
-  getUserReservations,
-  getActiveReservation,
-} from "@/backend/src/services/reservation.service";
+
 import { RecentHistoryTable } from "@/components/dashboard/RecentHistoryTable";
 import { ActiveSessionCard } from "@/components/dashboard/ActiveSessionCard";
 
@@ -27,20 +24,40 @@ export default async function DashboardPage() {
 
   if (!sessionId) redirect("/login");
 
-  const dbUser = await findUserBySession(sessionId);
-
+  // Fetch User
+  const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
+    headers: { Cookie: `sessionId=${sessionId}` }
+  });
+  
+  if (!userRes.ok) redirect("/login");
+  const userData = await userRes.json();
+  const dbUser = userData.userId ? userData : null;
   if (!dbUser) redirect("/login");
 
   const user = {
-    userId: dbUser.id,
+    userId: dbUser.userId,
     email: dbUser.email,
     fullName: dbUser.fullName,
     role: dbUser.role ?? "user",
   };
 
-  const allReservations = await getUserReservations(dbUser.id);
+  // Fetch Reservations
+  const reservationsRes = await fetch(`${process.env.BACKEND_URL}/api/reservation/reservations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: dbUser.userId })
+  });
+  const { reservations: allReservations = [] } = await reservationsRes.json();
+  
   const recentReservations = allReservations.slice(0, 4);
-  const activeReservation = await getActiveReservation(dbUser.id);
+
+  // Fetch Active Session
+  const activeRes = await fetch(`${process.env.BACKEND_URL}/api/reservation/active`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: dbUser.userId })
+  });
+  const activeReservation = await activeRes.json();
 
   return (
     <DashboardLayout user={user}>

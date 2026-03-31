@@ -1,11 +1,5 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { findUserBySession } from "@/backend/src/services/auth.service";
-import {
-  getParkingLocation,
-  getParkingSpotFromLocationId,
-} from "@/backend/src/services/parking.service";
-import { getVehiclesByUserId } from "@/backend/src/services/cars.service";
 import LocationDetailsClient from "@/components/location/LocationDetailsClient";
 import { ParkingLocation } from "@/types/location";
 
@@ -20,11 +14,24 @@ export default async function LocationDetailsPage({ params }: PageProps) {
   const sessionId = cookieStore.get("sessionId")?.value;
   if (!sessionId) redirect("/login");
 
-  const user = await findUserBySession(sessionId);
+  // Fetch User
+  const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
+    headers: { Cookie: `sessionId=${sessionId}` }
+  });
+
+  if (!userRes.ok) redirect("/login");
+  const userData = await userRes.json();
+  const user = userData.userId ? userData : null;
   if (!user) redirect("/login");
 
-  const dbLocation = await getParkingLocation(id);
-  if (!dbLocation) {
+  // Fetch Location & Spot
+  const locationRes = await fetch(`${process.env.BACKEND_URL}/api/parking/location`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  });
+  
+  if (!locationRes.ok) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-xl font-bold">Location not found</p>
@@ -32,9 +39,15 @@ export default async function LocationDetailsPage({ params }: PageProps) {
     );
   }
 
-  console.log(dbLocation);
-  const spot = await getParkingSpotFromLocationId(id);
-  const vehicles = await getVehiclesByUserId(user.id);
+  const { location: dbLocation, spot } = await locationRes.json();
+  
+  // Fetch Vehicles
+  const vehiclesRes = await fetch(`${process.env.BACKEND_URL}/api/vehicle/user`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: user.userId })
+  });
+  const vehicles = await vehiclesRes.json();
 
   // Format the location data to match the expected ParkingLocation type
   const location: ParkingLocation = {

@@ -1,5 +1,5 @@
 import express from "express"
-import { cancelReservation, completeSession, getUserReservations, reserveSpot, startSession, validateQRToken } from "../services/reservation.service"
+import { cancelReservation, completeSession, extendReservation, getActiveReservation, getUserReservations, reserveSpot, startSession, validateQRToken } from "../services/reservation.service"
 
 const reservationRouter = express.Router()
 
@@ -61,6 +61,26 @@ reservationRouter.post('/cancel', async (req, res) => {
     if (!isCancelled) return res.status(301).json({ error: "Unable To Cancel Reservation" })
     
     return res.status(200).json({isCancelled})
+})
+
+reservationRouter.post('/active', async (req, res) => {
+    const { userId } = req.body
+    
+    const active = await getActiveReservation(userId)
+
+    if (!active) return res.status(200).json(null)
+    
+    return res.status(200).json(active)
+})
+
+reservationRouter.post('/extend', async (req, res) => {
+    const { reservationId, extraMinutes } = req.body
+    
+    const success = await extendReservation(reservationId, extraMinutes)
+
+    if (!success) return res.status(400).json({ error: "Unable To Extend Reservation" })
+    
+    return res.status(200).json({ success })
 })
 
 export default reservationRouter

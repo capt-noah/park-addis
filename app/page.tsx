@@ -11,7 +11,7 @@ import {
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { findUserBySession } from "@/backend/src/services/auth.service";
+
 
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -24,9 +24,14 @@ export default async function Home() {
   if (!sessionId) userStatus = false;
 
   if (sessionId) {
-    let user = await findUserBySession(sessionId);
+    const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
+      headers: { Cookie: `sessionId=${sessionId}` }
+    });
 
-    if (user) userStatus = true;
+    if (userRes.ok) {
+      const userData = await userRes.json();
+      if (userData.userId) userStatus = true;
+    }
   }
 
   return (
