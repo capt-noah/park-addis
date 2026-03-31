@@ -84,7 +84,7 @@ export async function initializeChapaPayment({amount, email, tx_ref}: {amount: s
         })
     })
 
-    const data = await response.json()
+    const data = await response.json() as { data: { checkout_url: string } }
 
     return data.data.checkout_url
 }

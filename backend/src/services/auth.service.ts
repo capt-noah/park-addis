@@ -1,6 +1,6 @@
 import { users } from "../schema/users";
 import { vehicles } from "../schema/vehicles";
-import { sessions } from "@/backend/src/schema/sessions";
+import { sessions } from "../schema/sessions";
 import { db } from "../db";
 import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";

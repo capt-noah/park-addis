@@ -25,4 +25,4 @@ app.get('/', (req, res) => {
     return res.send("it actually works gng!!")
 })
 
-app.listen(4000, () => console.log("listening at port 4000...."))
+app.listen(process.env.PORT, () => console.log("listening...."))

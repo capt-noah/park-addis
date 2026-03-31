@@ -6,7 +6,7 @@ import {
   uniqueIndex,
   pgTable,
 } from "drizzle-orm/pg-core";
-import { users } from "@/backend/src/schema/users";
+import { users } from "./users";
 
 export const sessions = pgTable(
   "sessions",

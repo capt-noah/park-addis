@@ -3,8 +3,6 @@ import { parkingLocations } from "../schema/parkingLocations";
 import { sql, eq, gt, and } from "drizzle-orm";
 import { parkingSpots } from "../schema/parkingSpots";
 
-import { GeoJSONFeature } from "@/types/geojson";
-
 
 export async function createParkingLocation( name: string, address: string, coor: { lng: number, lat: number } ) {
     const response = await db.execute(sql`

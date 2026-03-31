@@ -1,10 +1,6 @@
 import express from "express";
-import {
-  registerUserAndCar,
-  validateUser,
-  createSession,
-} from "../services/auth.service";
-import { authMiddleware } from "@/backend/src/middleware/auth.middleware";
+import { registerUserAndCar, validateUser, createSession } from "../services/auth.service";
+import { authMiddleware } from "../middleware/auth.middleware";
 
 const authRouter = express.Router();
 
