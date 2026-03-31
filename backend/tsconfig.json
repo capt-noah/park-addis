@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "module": "esnext",
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "allowImportingTsExtensions": true,
+    "noEmit": true, // Bun runs TS directly, so we don't need to emit JS files locally
+    "composite": true,
+    "strict": true,
+    "downlevelIteration": true,
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowJs": true,
+    "types": ["bun", "node"], // Allows Bun and Node global types
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"] // Supports the @/ prefix inside the backend folder
+    }
+  },
+  "include": ["src/**/*"]
+}

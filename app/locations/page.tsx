@@ -1,9 +1,9 @@
 import { Sidebar } from "@/components/Sidebar";
 import { cookies } from "next/headers";
-import { findUserBySession } from "@/src/services/auth.service";
+import { findUserBySession } from "@/backend/src/services/auth.service";
 import { redirect } from "next/navigation";
 
-import { getParkingLocationsWithinRange } from "@/src/services/parking.service";
+import { getParkingLocationsWithinRange } from "@/backend/src/services/parking.service";
 import { GeoJSONFeature } from "@/types/geojson";
 import LocationsContainer from "@/components/location/LocationsContainer";
 import { DEFAULT_LAT, DEFAULT_LNG, DEFAULT_RANGE } from "@/lib/location";
@@ -36,9 +36,7 @@ export default async function LocationsPage() {
 
   console.log(locations);
 
-  return (
-    <LocationsLayout user={user} locations={locations} />
-  );
+  return <LocationsLayout user={user} locations={locations} />;
 }
 
 import LocationsLayout from "@/components/location/LocationsLayout";

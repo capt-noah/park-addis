@@ -1,0 +1,32 @@
+{
+  "name": "park-addis-api",
+  "version": "1.0.0",
+  "module": "src/server.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun src/server.ts",
+    "build": "bun build ./src/server.ts --outdir ./dist",
+    "start": "bun dist/server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "crypto": "^1.0.1",
+    "decimal.js": "^10.6.0",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.1",
+    "express": "^5.2.1",
+    "pg": "^8.20.0",
+    "postgres": "^3.4.8"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.0.0",
+    "drizzle-kit": "^0.24.0",
+    "typescript": "^5.0.0"
+  }
+}

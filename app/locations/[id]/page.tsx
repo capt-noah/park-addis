@@ -1,11 +1,11 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { findUserBySession } from "@/src/services/auth.service";
+import { findUserBySession } from "@/backend/src/services/auth.service";
 import {
   getParkingLocation,
   getParkingSpotFromLocationId,
-} from "@/src/services/parking.service";
-import { getVehiclesByUserId } from "@/src/services/cars.service";
+} from "@/backend/src/services/parking.service";
+import { getVehiclesByUserId } from "@/backend/src/services/cars.service";
 import LocationDetailsClient from "@/components/location/LocationDetailsClient";
 import { ParkingLocation } from "@/types/location";
 
@@ -32,7 +32,7 @@ export default async function LocationDetailsPage({ params }: PageProps) {
     );
   }
 
-  console.log(dbLocation)
+  console.log(dbLocation);
   const spot = await getParkingSpotFromLocationId(id);
   const vehicles = await getVehiclesByUserId(user.id);
 
@@ -45,8 +45,13 @@ export default async function LocationDetailsPage({ params }: PageProps) {
     price: spot ? parseFloat(spot.pricePerHour) : 25,
     rating:
       dbLocation.ratingsCount && dbLocation.ratingsCount > 0
-        ? 
-            parseFloat((Number(dbLocation.ratingsSum!) / dbLocation.ratingsCount / 10).toFixed(1))
+        ? parseFloat(
+            (
+              Number(dbLocation.ratingsSum!) /
+              dbLocation.ratingsCount /
+              10
+            ).toFixed(1),
+          )
         : 4.5,
     distance: 0,
     eta: 0,

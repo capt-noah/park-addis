@@ -1,8 +1,18 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
-import { User, Mail, Phone, Calendar, MapPin, Car, Plus, ShieldUser, ExternalLink } from "lucide-react";
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  MapPin,
+  Car,
+  Plus,
+  ShieldUser,
+  ExternalLink,
+} from "lucide-react";
 import Image from "next/image";
-import { findUserBySession } from "@/src/services/auth.service";
-import { getVehiclesByUserId } from "@/src/services/cars.service";
+import { findUserBySession } from "@/backend/src/services/auth.service";
+import { getVehiclesByUserId } from "@/backend/src/services/cars.service";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
@@ -10,52 +20,63 @@ export default async function ProfilePage() {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get("sessionId")?.value;
   if (!sessionId) redirect("/login");
-  
+
   const dbUser = await findUserBySession(sessionId);
   if (!dbUser) redirect("/login");
 
   const userVehicles = await getVehiclesByUserId(dbUser.id);
 
-  const user = { 
-    userId: dbUser.id, 
-    fullName: dbUser.fullName, 
-    email: dbUser.email, 
+  const user = {
+    userId: dbUser.id,
+    fullName: dbUser.fullName,
+    email: dbUser.email,
     phoneNumber: dbUser.phoneNumber,
     role: dbUser.role ?? "user",
-    createdAt: dbUser.createdAt ? new Date(dbUser.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "Oct 2021"
+    createdAt: dbUser.createdAt
+      ? new Date(dbUser.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        })
+      : "Oct 2021",
   };
 
   return (
     <DashboardLayout user={user}>
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="mb-2">
-          <h1 className="text-2xl font-extrabold text-primary mb-1">Profile Settings</h1>
+          <h1 className="text-2xl font-extrabold text-primary mb-1">
+            Profile Settings
+          </h1>
         </div>
 
         {/* Header Card */}
         <div className="bg-card rounded-[2rem] p-8 border border-border shadow-sm flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group transition-colors">
           <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/10 relative flex-shrink-0">
-            <Image 
+            <Image
               src="/avatar.png"
-              alt="Profile" 
-              fill 
+              alt="Profile"
+              fill
               className="object-cover"
             />
           </div>
-          
+
           <div className="flex-1 text-center md:text-left">
-            <h2 className="text-2xl font-extrabold text-foreground mb-1">{user.fullName}</h2>
-            <p className="text-muted-foreground text-sm font-medium mb-4">{user.role}</p>
-            
+            <h2 className="text-2xl font-extrabold text-foreground mb-1">
+              {user.fullName}
+            </h2>
+            <p className="text-muted-foreground text-sm font-medium mb-4">
+              {user.role}
+            </p>
+
             <div className="flex flex-wrap items-center gap-6 text-muted-foreground">
-               <div className="flex items-center gap-2 text-[11px] font-bold">
-                 <Calendar className="w-4 h-4 text-muted-foreground/60" />
-                 Member since {user.createdAt}
-               </div>
-               <div className="flex items-center gap-2 text-[11px] font-bold">
-                 <MapPin className="w-4 h-4 text-muted-foreground/60" />
-                 Addis Ababa, Ethiopia
-               </div>
+              <div className="flex items-center gap-2 text-[11px] font-bold">
+                <Calendar className="w-4 h-4 text-muted-foreground/60" />
+                Member since {user.createdAt}
+              </div>
+              <div className="flex items-center gap-2 text-[11px] font-bold">
+                <MapPin className="w-4 h-4 text-muted-foreground/60" />
+                Addis Ababa, Ethiopia
+              </div>
             </div>
           </div>
 
@@ -67,41 +88,49 @@ export default async function ProfilePage() {
         {/* Personal Information */}
         <div className="bg-card rounded-[2rem] border border-border shadow-sm overflow-hidden transition-colors">
           <div className="p-6 border-b border-border flex items-center gap-3">
-             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-               <User className="w-4 h-4 text-primary" />
-             </div>
-             <h3 className="font-bold text-foreground">Personal Information</h3>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <User className="w-4 h-4 text-primary" />
+            </div>
+            <h3 className="font-bold text-foreground">Personal Information</h3>
           </div>
-          
+
           <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-muted-foreground ml-1">First Name</label>
-              <input 
-                type="text" 
-                defaultValue={user.fullName.split(' ')[0]}
+              <label className="text-[11px] font-bold text-muted-foreground ml-1">
+                First Name
+              </label>
+              <input
+                type="text"
+                defaultValue={user.fullName.split(" ")[0]}
                 className="w-full bg-muted border-none rounded-xl py-3 px-4 text-xs font-bold text-foreground focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-muted-foreground ml-1">Last Name</label>
-              <input 
-                type="text" 
-                defaultValue={user.fullName.split(' ').slice(1).join(' ')}
+              <label className="text-[11px] font-bold text-muted-foreground ml-1">
+                Last Name
+              </label>
+              <input
+                type="text"
+                defaultValue={user.fullName.split(" ").slice(1).join(" ")}
                 className="w-full bg-muted border-none rounded-xl py-3 px-4 text-xs font-bold text-foreground focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-muted-foreground ml-1">Email Address</label>
-              <input 
-                type="email" 
+              <label className="text-[11px] font-bold text-muted-foreground ml-1">
+                Email Address
+              </label>
+              <input
+                type="email"
                 defaultValue={user.email}
                 className="w-full bg-muted border-none rounded-xl py-3 px-4 text-xs font-bold text-foreground focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
               />
             </div>
             <div className="space-y-3">
-              <label className="text-[11px] font-bold text-muted-foreground ml-1">Phone Number</label>
-              <input 
-                type="text" 
+              <label className="text-[11px] font-bold text-muted-foreground ml-1">
+                Phone Number
+              </label>
+              <input
+                type="text"
                 defaultValue={user.phoneNumber}
                 className="w-full bg-muted border-none rounded-xl py-3 px-4 text-xs font-bold text-foreground focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground"
               />
@@ -112,32 +141,41 @@ export default async function ProfilePage() {
         {/* Vehicle Information */}
         <div className="bg-card rounded-[2rem] border border-border shadow-sm overflow-hidden transition-colors">
           <div className="p-6 border-b border-border flex items-center gap-3">
-             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-               <Car className="w-4 h-4 text-primary" />
-             </div>
-             <h3 className="font-bold text-foreground">Vehicle Information</h3>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Car className="w-4 h-4 text-primary" />
+            </div>
+            <h3 className="font-bold text-foreground">Vehicle Information</h3>
           </div>
-          
+
           <div className="p-8 space-y-8">
             {userVehicles.length > 0 ? (
               userVehicles.map((vehicle, idx) => (
-                <div key={vehicle.id} className={`${idx !== userVehicles.length - 1 ? 'border-b border-border pb-8' : ''}`}>
+                <div
+                  key={vehicle.id}
+                  className={`${idx !== userVehicles.length - 1 ? "border-b border-border pb-8" : ""}`}
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                     <div className="space-y-3">
-                      <label className="text-[11px] font-bold text-muted-foreground ml-1">License Plate</label>
+                      <label className="text-[11px] font-bold text-muted-foreground ml-1">
+                        License Plate
+                      </label>
                       <div className="flex items-center gap-3 bg-muted rounded-xl px-4 py-3 border border-border/50">
-                         <div className="px-2 py-0.5 bg-card border border-border rounded text-[10px] font-bold text-muted-foreground">ET</div>
-                         <input 
-                          type="text" 
+                        <div className="px-2 py-0.5 bg-card border border-border rounded text-[10px] font-bold text-muted-foreground">
+                          ET
+                        </div>
+                        <input
+                          type="text"
                           defaultValue={vehicle.plateNumber}
                           className="flex-1 bg-transparent border-none p-0 text-xs font-bold text-foreground focus:ring-0"
-                         />
+                        />
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <label className="text-[11px] font-bold text-muted-foreground ml-1">Car Model</label>
-                      <input 
-                        type="text" 
+                      <label className="text-[11px] font-bold text-muted-foreground ml-1">
+                        Car Model
+                      </label>
+                      <input
+                        type="text"
                         defaultValue={vehicle.carModel}
                         className="w-full bg-muted border-none rounded-xl py-3 px-4 text-xs font-bold text-foreground focus:ring-2 focus:ring-primary/20 transition-all"
                       />
@@ -145,13 +183,17 @@ export default async function ProfilePage() {
                   </div>
 
                   <div className="mt-6 flex items-center gap-3">
-                    <label className="text-[11px] font-bold text-muted-foreground ml-1">Color:</label>
+                    <label className="text-[11px] font-bold text-muted-foreground ml-1">
+                      Color:
+                    </label>
                     <div className="flex items-center gap-2">
-                       <div 
-                         className="w-6 h-6 rounded-full border-2 border-primary shadow-sm" 
-                         style={{ backgroundColor: vehicle.color || '#bdcad9' }}
-                       />
-                       <span className="text-xs font-bold text-muted-foreground">{vehicle.color || 'N/A'}</span>
+                      <div
+                        className="w-6 h-6 rounded-full border-2 border-primary shadow-sm"
+                        style={{ backgroundColor: vehicle.color || "#bdcad9" }}
+                      />
+                      <span className="text-xs font-bold text-muted-foreground">
+                        {vehicle.color || "N/A"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -163,19 +205,19 @@ export default async function ProfilePage() {
             )}
 
             <button className="flex items-center gap-2 text-xs font-bold text-primary hover:underline">
-               <Plus className="w-4 h-4" /> Add another vehicle
+              <Plus className="w-4 h-4" /> Add another vehicle
             </button>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex justify-end gap-3 pt-6">
-           <button className="px-8 py-3 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:bg-muted transition-colors">
-             Cancel
-           </button>
-           <button className="px-8 py-3 rounded-2xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-colors shadow-lg shadow-primary/20">
-             Save Changes
-           </button>
+          <button className="px-8 py-3 rounded-2xl border border-border text-sm font-bold text-muted-foreground hover:bg-muted transition-colors">
+            Cancel
+          </button>
+          <button className="px-8 py-3 rounded-2xl bg-primary text-white text-sm font-bold hover:opacity-90 transition-colors shadow-lg shadow-primary/20">
+            Save Changes
+          </button>
         </div>
       </div>
     </DashboardLayout>
