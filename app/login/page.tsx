@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, Chrome, Apple } from "lucide-react";
-import Loader from "@/components/Loader";
-import { useUI } from "@/components/ui/UIProvider";
+import Loader from "@/frontend/components/Loader";
+import { useUI } from "@/frontend/components/ui/UIProvider";
 
 export default function LoginPage() {
   const { showNotification } = useUI();
