@@ -33,8 +33,9 @@ export default function ReservationsClient({ initialReservations, user }: { init
       cancelText: "Keep it",
       onConfirm: async () => {
         try {
-          const response = await fetch(`/api/reservation?id=${reservationId}`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reservation?id=${reservationId}`, {
             method: 'DELETE',
+            credentials: 'include',
           });
 
           if (response.ok) {

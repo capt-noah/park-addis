@@ -30,7 +30,9 @@ export function Sidebar({ user }: { user?: {userId: string, fullName: string, em
       confirmText: "Logout",
       cancelText: "Stay Logged In",
       onConfirm: async () => {
-        const response = await fetch('/api/logout');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
+          credentials: 'include'
+        });
         const data = await response.json();
         if (!data.ok) console.log('unable to logout');
         router.replace('/');

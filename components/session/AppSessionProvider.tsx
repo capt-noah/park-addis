@@ -64,7 +64,9 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
       setIsLoading(true);
       
       // 1. Fetch User Info
-      const userRes = await fetch("/api/auth/me");
+      const userRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`, {
+        credentials: "include"
+      });
       if (!userRes.ok) {
         setUser(null);
         setBalance(null);
@@ -76,7 +78,9 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
       // 2. Fetch Wallet Balance (only if user exists)
       if (userData.userId) {
-        const walletRes = await fetch("/api/wallet");
+        const walletRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet`, {
+          credentials: "include"
+        });
         if (walletRes.ok) {
           const walletData = await walletRes.json();
           setBalance(parseFloat(walletData.balance));
@@ -84,7 +88,9 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
       }
 
       // 3. Fetch Active Reservation
-      const res = await fetch("/api/reservation/active");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reservation/active`, {
+        credentials: "include"
+      });
       if (res.ok) {
         const data = await res.json();
         setActiveReservation(data);

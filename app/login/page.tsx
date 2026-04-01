@@ -22,13 +22,14 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
 
-    const res = await fetch('/api/login', {
-      method: 'POST',
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`, {
+      method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({email, password})
-    })
+      credentials: "include",
+      body: JSON.stringify({ email, password }),
+    });
 
     if (res.ok) {
       showNotification("Login successful!", "success");

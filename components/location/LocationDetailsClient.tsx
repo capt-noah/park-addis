@@ -106,9 +106,10 @@ export default function LocationDetailsClient({
             return;
           }
 
-          const res = await fetch("/api/reservation", {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reservation`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
             body: JSON.stringify({
               spotId: spot.id,
               vehicleId: selectedVehicle.id,

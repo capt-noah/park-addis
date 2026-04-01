@@ -6,12 +6,20 @@ const reservationRouter = express.Router()
 
 // 1. Create Reservation
 reservationRouter.post('/', authMiddleware, async (req, res) => {
-    const { spotId, vehicleId, startTime, endTime } = req.body
-    const userId = res.locals.user.id
-    
-    const reservedSpot = await reserveSpot(userId, spotId, vehicleId, startTime, endTime)
-    if (!reservedSpot) return res.status(301).json({ error: "Unable to Reserve Parking Spot" })
-    return res.status(200).json({reservedSpot})
+    try {
+        const { spotId, vehicleId, startTime, endTime } = req.body
+        const userId = res.locals.user.id
+        
+        const start = new Date(startTime)
+        const end = new Date(endTime)
+        
+        const reservedSpot = await reserveSpot(userId, spotId, vehicleId, start, end)
+        if (!reservedSpot) return res.status(400).json({ error: "Unable to Reserve Parking Spot" })
+        return res.status(200).json({reservedSpot})
+    } catch (error) {
+        console.error("Create reservation error:", error)
+        return res.status(500).json({ error: "Internal Server Error during reservation creation" })
+    }
 })
 
 reservationRouter.post('/reserve', async (req, res) => {
@@ -23,10 +31,15 @@ reservationRouter.post('/reserve', async (req, res) => {
 
 // 2. List User Reservations
 reservationRouter.get('/', authMiddleware, async (req, res) => {
-    const userId = res.locals.user.id
-    const reservations = await getUserReservations(userId)
-    if (!reservations) return res.status(301).json({ error: "No Reservations Found" })
-    return res.status(200).json({reservations})
+    try {
+        const userId = res.locals.user.id
+        const reservations = await getUserReservations(userId)
+        if (!reservations) return res.status(404).json({ error: "No Reservations Found" })
+        return res.status(200).json({reservations})
+    } catch (error) {
+        console.error("List reservations error:", error)
+        return res.status(500).json({ error: "Internal Server Error during reservation retrieval" })
+    }
 })
 
 reservationRouter.post('/reservations', async (req, res) => {
@@ -38,10 +51,15 @@ reservationRouter.post('/reservations', async (req, res) => {
 
 // 3. Active Reservation
 reservationRouter.get('/active', authMiddleware, async (req, res) => {
-    const userId = res.locals.user.id
-    const active = await getActiveReservation(userId)
-    if (!active) return res.status(200).json(null)
-    return res.status(200).json(active)
+    try {
+        const userId = res.locals.user.id
+        const active = await getActiveReservation(userId)
+        if (!active) return res.status(200).json(null)
+        return res.status(200).json(active)
+    } catch (error) {
+        console.error("Get active reservation error:", error)
+        return res.status(500).json({ error: "Internal Server Error during active reservation retrieval" })
+    }
 })
 
 reservationRouter.post('/active', async (req, res) => {

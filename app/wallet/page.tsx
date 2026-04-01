@@ -38,7 +38,7 @@ export default function WalletPage() {
 
   const fetchTransactionsOnly = useCallback(async (wId: string) => {
     try {
-      const txRes = await fetch("/api/wallet/transaction", {
+      const txRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/transaction`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -59,7 +59,7 @@ export default function WalletPage() {
       setIsLoading(true);
       
       // 1. Get User
-      const userRes = await fetch("/api/auth/me", {
+      const userRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`, {
         credentials: "include"
       });
       if (!userRes.ok) throw new Error("Auth failed");
@@ -74,7 +74,7 @@ export default function WalletPage() {
       });
 
       // 2. Get Wallet (Session-based)
-      const walletRes = await fetch("/api/wallet", {
+      const walletRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet`, {
         credentials: "include"
       });
       
@@ -111,7 +111,7 @@ export default function WalletPage() {
   const handleTopUp = async (amount: number) => {
     try {
       setIsToppingUp(true);
-      const response = await fetch("/api/wallet/topup", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/topup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
