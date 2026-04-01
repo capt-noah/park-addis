@@ -1,34 +1,40 @@
 import express from "express";
-import { registerUserAndCar, validateUser, createSession } from "../services/auth.service";
+import { registerAndSetupUser, validateUser, createSession } from "../services/auth.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 
 const authRouter = express.Router();
 
 authRouter.post("/register", async (req, res) => {
-  const { fullName, email, password, phoneNumber, role, car } = req.body;
-  const { plateNumber, carModel, color } = car;
+  try {
+    const { fullName, email, password, phoneNumber, role, car } = req.body;
+    const { plateNumber, carModel, color } = car || {};
 
-  const user = await registerUserAndCar(
-    fullName,
-    email,
-    password,
-    phoneNumber,
-    role,
-    plateNumber,
-    carModel,
-    color,
-  );
+    const result = await registerAndSetupUser(
+      fullName,
+      email,
+      password,
+      phoneNumber,
+      role,
+      plateNumber,
+      carModel,
+      color,
+    );
 
-  if (!user) res.status(301).json({ error: "Unable To Create User" });
+    if (!result) return res.status(400).json({ error: "Unable To Create User" });
 
-  const sessionId = await createSession(user.id);
+    const { user, sessionId } = result;
 
-  res.cookie("sessionId", sessionId, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-  });
-  return res.status(201).json({ message: "User Created Successfully", sessionId });
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res.status(201).json({ ok: true, message: "User Created Successfully", sessionId });
+  } catch (error: any) {
+    console.error("Registration Error:", error);
+    return res.status(500).json({ error: error.message || "Internal Server Error" });
+  }
 });
 
 authRouter.post("/login", async (req, res) => {

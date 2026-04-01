@@ -7,9 +7,8 @@ import { reservations } from "../schema/reservations"
 import crypto from "crypto"
 import { users } from "../schema/users"
 
+import chapa from "../chapa"
 
-const CHAPA_URL = ''
-const CHAPA_SECRET_KEY = ''
 
 export async function createPayment(qrToken: string) {
 
@@ -44,7 +43,7 @@ export async function createPayment(qrToken: string) {
                                  transactionId: tx_ref
                              })
     
-    const chapa = await initializeChapaPayment({amount, email: user.email, tx_ref})
+    const chapa = await initializeChapaPayment({amount, email: user.email, fullName: user.fullName, phone_number: user.phoneNumber, tx_ref})
     
     return chapa ?? null
 }
@@ -60,36 +59,37 @@ export async function completePayment(transactionId: string) {
     return response[0] ?? null
 }
 
-export async function initializeChapaPayment({amount, email, tx_ref}: {amount: string, email: string, tx_ref: string}) {
+export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string}) {
     
-    const response = await fetch(CHAPA_URL, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${CHAPA_SECRET_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            amount,
-            currency: "ETB",
-            email,
-            tx_ref,
-            callback_url: "",
-            return_url: "",
-            customization: {
-                title: "Park Addis Payment",
-                description: "Parking Reservation Payment"
-            }
+    const first_name = fullName.split(' ')[0]
+    const last_name = fullName.split(' ')[1]
 
+    const response = chapa.initialize({
+        first_name,
+        last_name,
+        phone_number,
+        amount,
+        currency: "ETB",
+        email,
+        tx_ref,
+        callback_url: `${process.env.VERCEL_URL}/api/payment/callback`,
+        return_url: `${process.env.VERCEL_URL}/reservations`,
+        customization: {
+            title: "Park Addis Payment",
+            description: "Parking Reservation Payment"
+        }
 
-        })
     })
 
-    const data = await response.json() as { data: { checkout_url: string } }
+    const data = await response
 
-    return data.data.checkout_url
+    return data
 }
 
 export async function verifyChapaPayment(tx_ref: string) {
-    let data = {status: "success"}
-    return data
+    const response = await chapa.verify({
+        tx_ref
+    })
+
+    return response ?? null
 }

@@ -4,8 +4,11 @@ import { sessions } from "../schema/sessions";
 import { db } from "../db";
 import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
+import { wallets } from "../schema/wallets";
 
-export async function registerUserAndCar(
+import Decimal from "decimal.js";
+
+export async function registerAndSetupUser(
   fullName: string,
   email: string,
   password: string,
@@ -17,21 +20,39 @@ export async function registerUserAndCar(
 ) {
   const passwordHash = await bcrypt.hash(password, 10);
 
-  const userAndCar = await db.transaction(async (tx) => {
-    const user = await tx
+  const result = await db.transaction(async (tx) => {
+    // 1. Create User
+    const userArr = await tx
       .insert(users)
       .values({ fullName, email, passwordHash, phoneNumber, role })
       .returning();
+    const user = userArr[0];
 
-    const car = await tx
-      .insert(vehicles)
-      .values({ userId: user[0].id, plateNumber, carModel, color })
+    // 2. Conditional Vehicle Creation (only if driver and plate provided)
+    if (role === "driver" && plateNumber) {
+      await tx
+        .insert(vehicles)
+        .values({ userId: user.id, plateNumber, carModel, color })
+        .returning();
+    }
+    
+    // 3. Create Wallet
+    const balance = new Decimal('0').toString()
+    await tx.insert(wallets)
+            .values({userId: user.id, balance})
+            .returning();
+
+    // 4. Create Session
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const sessionArr = await tx
+      .insert(sessions)
+      .values({ userId: user.id, expiresAt })
       .returning();
 
-    return user[0];
+    return { user, sessionId: sessionArr[0].id };
   });
 
-  return userAndCar;
+  return result;
 }
 
 export async function registerVehicle(

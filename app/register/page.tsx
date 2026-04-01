@@ -43,6 +43,8 @@ export default function RegisterPage() {
     return `${p.slice(0,2)} - ${p.slice(2,3)} - ${p.slice(3)}`
   })()
 
+  console.log(displayPlate)
+
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
