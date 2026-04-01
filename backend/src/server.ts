@@ -19,6 +19,7 @@ app.use(cookieParser())
 
 app.use('/api/auth', authRouter)
 app.use('/api/parking', parkingRouter)
+app.use('/api/locations', parkingRouter)
 app.use('/api/reservation', reservationRouter)
 app.use('/api/payment', paymentRouter)
 app.use('/api/wallet', walletRouter)

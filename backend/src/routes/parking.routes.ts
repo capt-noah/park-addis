@@ -5,6 +5,36 @@ import { authMiddleware } from "../middleware/auth.middleware"
 
 const parkingRouter = express.Router()
 
+parkingRouter.get('/', async (req, res) => {
+    const { distance, lat, lng } = req.query;
+
+    try {
+        if (!distance || distance === 'All') {
+            const locations = await getParkingLocationsJson();
+            if (!locations) return res.status(404).json({ error: "Locations Not Found" });
+            return res.status(200).json({ locations });
+        }
+
+        const range = parseInt(distance as string);
+        const coor = {
+            lat: parseFloat(lat as string),
+            lng: parseFloat(lng as string)
+        };
+
+        if (isNaN(range) || isNaN(coor.lat) || isNaN(coor.lng)) {
+            return res.status(400).json({ error: "Invalid parameters" });
+        }
+
+        const locations = await getParkingLocationsWithinRange(range, coor);
+        if (!locations) return res.status(404).json({ error: "No locations found within range" });
+
+        return res.status(200).json({ locations });
+    } catch (error) {
+        console.error("Failed to fetch locations:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 parkingRouter.post('/range', async (req, res) => {
     const { range, coors } = req.body
 
