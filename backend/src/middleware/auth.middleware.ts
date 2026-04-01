@@ -3,7 +3,15 @@ import { findUserBySession, findSession } from "../services/auth.service"
 
 
 export async function authMiddleware( req: Request, res: Response, next: NextFunction) {
-    const sessionId = req.cookies.sessionId
+    let sessionId = req.cookies.sessionId
+
+    // Robust Fallback: Check Authorization Header (Bearer Token)
+    if (!sessionId && req.headers.authorization) {
+        const authHeader = req.headers.authorization
+        if (authHeader.startsWith("Bearer ")) {
+            sessionId = authHeader.substring(7)
+        }
+    }
 
     if (sessionId) {
         const session = await findSession(sessionId)

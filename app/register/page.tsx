@@ -52,25 +52,36 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
 
-    const res = await fetch('/api/register', {
-      method: 'POST',
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`, {
+      method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(
-        {
-          fullName, email, password, phoneNumber, role,
-          car: { plateNumber: licensePlate, carModel, color: carColor }
-        })
-    })
+      credentials: "include",
+      body: JSON.stringify({
+        fullName,
+        email,
+        password,
+        phoneNumber,
+        role,
+        car: {
+          plateNumber: licensePlate,
+          carModel,
+          color: carColor,
+        },
+      }),
+    });
 
-    const data = await res.json()
+    const data = await res.json();
 
     if (res.ok && data.ok) {
-      router.replace('/dashboard')
-      router.refresh()
-    }
-    else {
+      // Sync session to local cookie for Server Components
+      if (data.sessionId) {
+        document.cookie = `sessionId=${data.sessionId}; path=/; max-age=86400; samesite=lax`;
+      }
+      router.replace("/dashboard");
+      router.refresh();
+    } else {
       setError(data.error || "Registration failed")
       setLoading(false)
     }

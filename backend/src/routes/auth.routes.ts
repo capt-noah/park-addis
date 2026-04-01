@@ -26,9 +26,10 @@ authRouter.post("/register", async (req, res) => {
   res.cookie("sessionId", sessionId, {
     httpOnly: true,
     sameSite: "none",
+    secure: true,
     path: "/",
   });
-  return res.status(201).json({ message: "User Created Successfully" });
+  return res.status(201).json({ message: "User Created Successfully", sessionId });
 });
 
 authRouter.post("/login", async (req, res) => {
@@ -39,9 +40,14 @@ authRouter.post("/login", async (req, res) => {
 
   const sessionId = await createSession(user.id);
 
-  res.cookie("sessionId", sessionId, { httpOnly: true, sameSite: "lax" });
+  res.cookie("sessionId", sessionId, { 
+    httpOnly: true, 
+    sameSite: "none", 
+    secure: true, 
+    path: "/" 
+  });
 
-  return res.status(200).json({ user });
+  return res.status(200).json({ user, sessionId });
 });
 
 authRouter.get("/me", authMiddleware, async (req, res) => {
@@ -55,6 +61,16 @@ authRouter.get("/me", authMiddleware, async (req, res) => {
     fullName: user.fullName,
     role: user.role,
   });
+});
+
+authRouter.get("/logout", (req, res) => {
+  res.clearCookie("sessionId", {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
+    path: "/",
+  });
+  return res.status(200).json({ ok: true, message: "Logged out successfully" });
 });
 
 export default authRouter;

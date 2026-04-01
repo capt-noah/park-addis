@@ -30,8 +30,13 @@ export default function LoginPage() {
       credentials: "include",
       body: JSON.stringify({ email, password }),
     });
-
+    
     if (res.ok) {
+      const data = await res.json();
+      // Sync session to local cookie for Server Components
+      if (data.sessionId) {
+        document.cookie = `sessionId=${data.sessionId}; path=/; max-age=86400; samesite=lax`;
+      }
       showNotification("Login successful!", "success");
       router.replace("/dashboard")
       router.refresh()
