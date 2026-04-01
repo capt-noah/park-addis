@@ -14,6 +14,7 @@ import {
   BookingWidget,
 } from "./details";
 import { useSession } from "../session/AppSessionProvider";
+import { useUI } from "../ui/UIProvider";
 
 interface LocationDetailsClientProps {
   location: ParkingLocation;
@@ -28,6 +29,7 @@ export default function LocationDetailsClient({
 }: LocationDetailsClientProps) {
   const router = useRouter();
   const { activeReservation, refreshSession } = useSession();
+  const { showNotification, showConfirmation } = useUI();
 
   const [vehicles] = useState<any[]>(initialVehicles);
   const [isReserving, setIsReserving] = useState(false);
@@ -74,51 +76,63 @@ export default function LocationDetailsClient({
 
   const handleReserve = async () => {
     if (!spot) return;
-    setIsReserving(true);
 
-    const dateStr = selectedDate.toISOString().split("T")[0];
-    const start = new Date(`${dateStr}T${arrivalTime}:00`);
-    let end = new Date(`${dateStr}T${exitTime}:00`);
-
-    if (end <= start) {
-      end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+    if (!selectedVehicle) {
+      showNotification("Please select a vehicle first.", "info");
+      return;
     }
 
-    try {
-      if (activeReservation) {
-        alert("You already have an active parking session. Please complete it before booking a new one.");
-        return;
-      }
+    const duration = calculateDuration();
+    const total = calculateTotal();
+    
+    showConfirmation({
+      title: "Confirm Your Reservation",
+      message: `You are booking a spot at ${location.name} for ${duration.toFixed(1)} hours. The total cost will be ETB ${total.toFixed(2)}. Do you want to proceed?`,
+      confirmText: "Confirm Booking",
+      cancelText: "Review Details",
+      onConfirm: async () => {
+        setIsReserving(true);
+        const dateStr = selectedDate.toISOString().split("T")[0];
+        const start = new Date(`${dateStr}T${arrivalTime}:00`);
+        let end = new Date(`${dateStr}T${exitTime}:00`);
 
-      if (!selectedVehicle) {
-        alert("Please select a vehicle first.");
-        return;
-      }
+        if (end <= start) {
+          end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+        }
 
-      const res = await fetch("/api/reservations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          spotId: spot.id,
-          vehicleId: selectedVehicle.id,
-          startTime: start.toISOString(),
-          endTime: end.toISOString(),
-        }),
-      });
+        try {
+          if (activeReservation) {
+            showNotification("You already have an active parking session. Please complete it before booking a new one.", "error");
+            return;
+          }
 
-      if (res.ok) {
-        await refreshSession();
-        router.push("/reservations");
-      } else {
-        const data = await res.json();
-        alert(data.error || "Failed to create reservation");
+          const res = await fetch("/api/reservation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              spotId: spot.id,
+              vehicleId: selectedVehicle.id,
+              startTime: start.toISOString(),
+              endTime: end.toISOString(),
+            }),
+          });
+
+          if (res.ok) {
+            await refreshSession();
+            showNotification("Reservation successful!", "success");
+            router.push("/reservations");
+          } else {
+            const data = await res.json();
+            showNotification(data.error || "Failed to create reservation", "error");
+          }
+        } catch (err) {
+          console.error("Reservation error:", err);
+          showNotification("An unexpected error occurred.", "error");
+        } finally {
+          setIsReserving(false);
+        }
       }
-    } catch (err) {
-      console.error("Reservation error:", err);
-      alert("An unexpected error occurred.");
-    } finally {
-      setIsReserving(false);
-    }
+    });
   };
 
   const closeAllDropdowns = () => {

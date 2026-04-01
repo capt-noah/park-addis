@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, Eye, Chrome, Apple } from "lucide-react";
 import Loader from "@/components/Loader";
+import { useUI } from "@/components/ui/UIProvider";
 
 export default function LoginPage() {
-
+  const { showNotification } = useUI();
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -19,6 +20,7 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError("")
 
     const res = await fetch('/api/login', {
       method: 'POST',
@@ -29,11 +31,14 @@ export default function LoginPage() {
     })
 
     if (res.ok) {
+      showNotification("Login successful!", "success");
       router.replace("/dashboard")
       router.refresh()
     } else {
       const data = await res.json()
-      setError(data.error || "Login failed")
+      const errorMsg = data.error || "Login failed";
+      setError(errorMsg)
+      showNotification(errorMsg, "error");
       setLoading(false)
     }
 

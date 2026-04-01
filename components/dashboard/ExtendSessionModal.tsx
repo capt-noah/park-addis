@@ -9,8 +9,9 @@ import {
   ArrowRight,
   X,
   Minus,
-  Loader2,
 } from "lucide-react";
+import Loader from "@/components/Loader";
+import { useUI } from "@/components/ui/UIProvider";
 
 
 export function ExtendSessionModal({
@@ -20,6 +21,7 @@ export function ExtendSessionModal({
   reservation: any;
   onClose: () => void;
 }) {
+  const { showNotification } = useUI();
   const [extraMinutes, setExtraMinutes] = useState<number | string>(30);
   const [isCustom, setIsCustom] = useState(false);
   const [isExtending, setIsExtending] = useState(false);
@@ -63,13 +65,13 @@ export function ExtendSessionModal({
       const data = await response.json();
 
       if (response.ok && data.success) {
-        alert(`Session extended by ${parsedMins} minutes!`);
+        showNotification(`Session extended by ${parsedMins} minutes!`, "success");
         onClose();
       } else {
-        alert(data.error || "Failed to extend session");
+        showNotification(data.error || "Failed to extend session", "error");
       }
     } catch (err: any) {
-      alert(err.message || "An unexpected error occurred");
+      showNotification(err.message || "An unexpected error occurred", "error");
     } finally {
       setIsExtending(false);
     }
@@ -213,10 +215,7 @@ export function ExtendSessionModal({
           className="w-full bg-[#004D40] text-white font-bold py-4 rounded-2xl hover:bg-[#004D40]/90 disabled:opacity-50 transition-all text-sm active:scale-[0.98] shadow-lg shadow-[#004D40]/20 flex items-center justify-center gap-2 group"
         >
           {isExtending ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Extending...
-            </>
+            <Loader size="sm" />
           ) : (
             <>
               Confirm Extension

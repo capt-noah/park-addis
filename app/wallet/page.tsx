@@ -19,8 +19,13 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { TopUpModal } from "@/components/wallet/TopUpModal";
+import { useUI } from "@/components/ui/UIProvider";
+import { useSession } from "@/components/session/AppSessionProvider";
 
 export default function WalletPage() {
+  const { showNotification, showConfirmation } = useUI();
+  const { user: sessionUser, balance: sessionBalance, refreshSession } = useSession();
+  
   const [user, setUser] = useState<any>(null);
   const [balance, setBalance] = useState(0);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -29,6 +34,25 @@ export default function WalletPage() {
   const [userName, setUserName] = useState("NOAH SAMUEL");
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isToppingUp, setIsToppingUp] = useState(false);
+
+  const fetchTransactionsOnly = useCallback(async (wId: string) => {
+    try {
+      const txRes = await fetch("/api/wallet/transaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ walletId: wId })
+      });
+      
+      if (txRes.ok) {
+        const txData = await txRes.json();
+        setTransactions(txData);
+      }
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+    }
+  }, []);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -49,12 +73,9 @@ export default function WalletPage() {
         role: userData.role || "user"
       });
 
-      // 2. Get Wallet
-      const walletRes = await fetch("/api/wallet/user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ userId: userData.userId })
+      // 2. Get Wallet (Session-based)
+      const walletRes = await fetch("/api/wallet", {
+        credentials: "include"
       });
       
 
@@ -64,49 +85,59 @@ export default function WalletPage() {
         setBalance(parseFloat(walletData.balance));
 
         // 3. Get Transactions
-        const txRes = await fetch("/api/wallet/transaction", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ walletId: walletData.id })
-        });
-        
-        if (txRes.ok) {
-          const txData = await txRes.json();
-          setTransactions(txData);
-        }
+        await fetchTransactionsOnly(walletData.id);
       }
     } catch (err) {
       console.error("Error fetching wallet data:", err);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchTransactionsOnly]);
 
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
 
+  const handleTopUpWithConfirmation = async (amount: number) => {
+    showConfirmation({
+      title: "Confirm Top-up",
+      message: `You are about to add ETB ${amount.toFixed(2)} to your wallet. Would you like to proceed?`,
+      confirmText: "Confirm Pay",
+      cancelText: "Cancel",
+      onConfirm: () => handleTopUp(amount)
+    });
+  };
+
   const handleTopUp = async (amount: number) => {
-    if (!userId) return;
-    
     try {
+      setIsToppingUp(true);
       const response = await fetch("/api/wallet/topup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ userId, amount })
+        body: JSON.stringify({ amount })
       });
 
       if (response.ok) {
         setIsModalOpen(false);
-        fetchAllData();
-        alert(`Successfully topped up ETB ${amount.toFixed(2)}!`);
+        // Refresh local data for transactions
+        if (walletId) fetchTransactionsOnly(walletId);
+        // Refresh global session for balance everywhere
+        await refreshSession();
+        // Update local balance state too for immediate UI feedback in this page
+        const newBalance = balance + amount;
+        setBalance(newBalance);
+        
+        showNotification(`Successfully topped up ETB ${amount.toFixed(2)}!`, "success");
       } else {
-        alert("Failed to top up. Please try again.");
+        const data = await response.json();
+        showNotification(data.error || "Failed to top up. Please try again.", "error");
       }
     } catch (err) {
       console.error("Top-up error:", err);
+      showNotification("An unexpected error occurred.", "error");
+    } finally {
+      setIsToppingUp(false);
     }
   };
 
@@ -352,7 +383,8 @@ export default function WalletPage() {
       <TopUpModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onConfirm={handleTopUp} 
+        onConfirm={handleTopUpWithConfirmation}
+        isProcessing={isToppingUp}
       />
     </DashboardLayout>
   );

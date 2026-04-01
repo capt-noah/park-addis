@@ -2,16 +2,18 @@
 
 import React, { useState } from "react";
 import { X, Wallet, ShieldCheck, Check, ChevronRight } from "lucide-react";
+import Loader from "@/components/Loader";
 
 interface TopUpModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (amount: number) => void;
+  isProcessing?: boolean;
 }
 
 const presets = [100, 250, 500];
 
-export function TopUpModal({ isOpen, onClose, onConfirm }: TopUpModalProps) {
+export function TopUpModal({ isOpen, onClose, onConfirm, isProcessing = false }: TopUpModalProps) {
   const [amount, setAmount] = useState(500);
   const [paymentMethod, setPaymentMethod] = useState<"chapa" | "telebirr">("telebirr");
 
@@ -131,10 +133,17 @@ export function TopUpModal({ isOpen, onClose, onConfirm }: TopUpModalProps) {
         <div className="px-8 pb-8">
           <button 
             onClick={() => onConfirm(amount)}
-            className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/30 active:scale-[0.98]"
+            disabled={isProcessing}
+            className="w-full bg-primary text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/30 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Pay ETB {amount.toLocaleString()}.00
-            <ChevronRight size={18} />
+            {isProcessing ? (
+              <Loader size="sm" />
+            ) : (
+              <>
+                Pay ETB {amount.toLocaleString()}.00
+                <ChevronRight size={18} />
+              </>
+            )}
           </button>
           
           <div className="mt-4 flex items-center justify-center gap-1.5 opacity-40">

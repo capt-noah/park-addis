@@ -3,6 +3,7 @@
 import { TabItem, ReservationCard, TicketModal } from ".";
 import { ReceiptModal } from "./ReceiptModal";
 import { useSession } from "../session/AppSessionProvider";
+import { useUI } from "../ui/UIProvider";
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -19,29 +20,37 @@ interface Reservation {
 
 export default function ReservationsClient({ initialReservations, user }: { initialReservations: any[], user: any }) {
   const { refreshSession } = useSession();
-  const [activeTab, setActiveTab] = useState("Active");
+  const { showNotification, showConfirmation } = useUI();
+  const [activeTab, setActiveTab ] = useState("Active");
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [reservations, setReservations] = useState(initialReservations);
 
   const handleCancel = async (reservationId: string) => {
-    if (!window.confirm("Are you sure you want to cancel this reservation?")) return;
+    showConfirmation({
+      title: "Cancel Reservation?",
+      message: "Are you sure you want to cancel this reservation? This action cannot be undone.",
+      confirmText: "Cancel Now",
+      cancelText: "Keep it",
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`/api/reservation?id=${reservationId}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/reservations?id=${reservationId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        await refreshSession();
-        setReservations(prev => prev.filter(r => r.id !== reservationId));
-      } else {
-        const data = await response.json();
-        alert(data.error || "Failed to cancel reservation");
+          if (response.ok) {
+            await refreshSession();
+            setReservations(prev => prev.filter(r => r.id !== reservationId));
+            showNotification("Reservation cancelled successfully", "success");
+          } else {
+            const data = await response.json();
+            showNotification(data.error || "Failed to cancel reservation", "error");
+          }
+        } catch (error) {
+          console.error("Cancel error:", error);
+          showNotification("An error occurred while cancelling", "error");
+        }
       }
-    } catch (error) {
-      console.error("Cancel error:", error);
-      alert("An error occurred while cancelling");
-    }
+    });
   };
 
   const filteredReservations = reservations.filter(res => {

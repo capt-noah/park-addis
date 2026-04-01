@@ -7,9 +7,11 @@ import { useTheme } from "./ThemeContext";
 
 import { useSession } from "./session/AppSessionProvider";
 
-export function DashboardLayout({ children, title, user }: { children: React.ReactNode; title?: string; user?: {fullName: string, email: string, role: string, userId: string} }) {
+export function DashboardLayout({ children, title, user: propUser }: { children: React.ReactNode; title?: string; user?: {fullName: string, email: string, role: string, userId: string} }) {
   const { theme, toggleTheme } = useTheme();
-  const { isSidebarCollapsed } = useSession();
+  const { isSidebarCollapsed, balance, user: sessionUser } = useSession();
+
+  const user = propUser || sessionUser;
 
   return (
     <div className="min-h-screen bg-background transition-colors duration-300">
@@ -30,7 +32,9 @@ export function DashboardLayout({ children, title, user }: { children: React.Rea
             <div className="hidden sm:flex items-center bg-muted rounded-xl px-3 py-1.5 border border-border">
               <div className="flex flex-col mr-3">
                 <span className="text-[8px] uppercase tracking-wider text-muted-foreground font-bold leading-none mb-0.5">Balance</span>
-                <span className="text-[11px] font-bold text-foreground leading-none">ETB 450.00</span>
+                <span className="text-[11px] font-bold text-foreground leading-none">
+                  {balance !== null ? `ETB ${balance.toFixed(2)}` : "---"}
+                </span>
               </div>
               <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
                 <Wallet className="w-3.5 h-3.5 text-white" />

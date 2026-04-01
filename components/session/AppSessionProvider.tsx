@@ -20,6 +20,8 @@ interface UserLocation {
 }
 
 interface SessionContextType {
+  user: any | null;
+  balance: number | null;
   activeReservation: Reservation | null;
   isLoading: boolean;
   refreshSession: () => Promise<void>;
@@ -34,6 +36,8 @@ interface SessionContextType {
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export function AppSessionProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<any | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
   const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -55,26 +59,49 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
     localStorage.setItem("sidebar-collapsed", String(collapsed));
   };
 
-  const fetchActiveReservation = useCallback(async () => {
+  const fetchSession = useCallback(async () => {
     try {
-      const res = await fetch("/api/reservations/active");
+      setIsLoading(true);
+      
+      // 1. Fetch User Info
+      const userRes = await fetch("/api/auth/me");
+      if (!userRes.ok) {
+        setUser(null);
+        setBalance(null);
+        setActiveReservation(null);
+        return;
+      }
+      const userData = await userRes.json();
+      setUser(userData);
+
+      // 2. Fetch Wallet Balance (only if user exists)
+      if (userData.userId) {
+        const walletRes = await fetch("/api/wallet");
+        if (walletRes.ok) {
+          const walletData = await walletRes.json();
+          setBalance(parseFloat(walletData.balance));
+        }
+      }
+
+      // 3. Fetch Active Reservation
+      const res = await fetch("/api/reservation/active");
       if (res.ok) {
         const data = await res.json();
         setActiveReservation(data);
       } else {
         setActiveReservation(null);
       }
+
     } catch (error) {
-      console.error("Failed to fetch active reservation", error);
-      setActiveReservation(null);
+      console.error("Failed to fetch session data", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchActiveReservation();
-  }, [fetchActiveReservation]);
+    fetchSession();
+  }, [fetchSession]);
 
   if (!mounted) {
     return <div className="min-h-screen bg-background opacity-0" />;
@@ -82,9 +109,11 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <SessionContext.Provider value={{ 
+      user,
+      balance,
       activeReservation, 
       isLoading, 
-      refreshSession: fetchActiveReservation,
+      refreshSession: fetchSession,
       userLocation,
       setUserLocation,
       selectedLocationId,

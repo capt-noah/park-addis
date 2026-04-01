@@ -42,20 +42,16 @@ export default async function DashboardPage() {
   };
 
   // Fetch Reservations
-  const reservationsRes = await fetch(`${process.env.BACKEND_URL}/api/reservation/reservations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: dbUser.userId })
+  const reservationsRes = await fetch(`${process.env.BACKEND_URL}/api/reservation`, {
+    headers: { Cookie: `sessionId=${sessionId}` }
   });
-  const { reservations: allReservations = [] } = await reservationsRes.json();
-  
+  const { reservations = [] } = await reservationsRes.json();
+  const allReservations = reservations;
   const recentReservations = allReservations.slice(0, 4);
 
   // Fetch Active Session
   const activeRes = await fetch(`${process.env.BACKEND_URL}/api/reservation/active`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: dbUser.userId })
+    headers: { Cookie: `sessionId=${sessionId}` }
   });
   const activeReservation = await activeRes.json();
 

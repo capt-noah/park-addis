@@ -1,6 +1,7 @@
 "use client";
 
-import { Calendar, Clock, Car, ChevronDown, ArrowRight, Loader2, Info } from "lucide-react";
+import { Calendar, Clock, Car, ChevronDown, ArrowRight, Info } from "lucide-react";
+import Loader from "@/components/Loader";
 import { CustomCalendar } from "./CustomCalendar";
 import { CustomTimePicker } from "./CustomTimePicker";
 
@@ -207,13 +208,10 @@ export function BookingWidget({
       <button 
         onClick={handleReserve}
         disabled={isReserving || !selectedVehicle || calculateTotal() <= 0}
-        className="w-full bg-primary text-white py-5 rounded-[1.5rem] font-bold text-lg text-center hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-primary/10 mb-6 flex items-center justify-center gap-2"
+        className="w-full bg-primary text-white h-[72px] rounded-[1.5rem] font-bold text-lg text-center hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xl shadow-primary/10 mb-6 flex items-center justify-center gap-2"
       >
          {isReserving ? (
-           <>
-             <Loader2 className="w-5 h-5 animate-spin" />
-             Processing...
-           </>
+           <Loader size="md" />
          ) : (
            <>
              Reserve Spot <ArrowRight className="w-5 h-5" />

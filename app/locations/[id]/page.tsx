@@ -41,11 +41,9 @@ export default async function LocationDetailsPage({ params }: PageProps) {
 
   const { location: dbLocation, spot } = await locationRes.json();
   
-  // Fetch Vehicles
-  const vehiclesRes = await fetch(`${process.env.BACKEND_URL}/api/vehicle/user`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: user.userId })
+  // Fetch Vehicles (Session-based)
+  const vehiclesRes = await fetch(`${process.env.BACKEND_URL}/api/vehicle`, {
+    headers: { Cookie: `sessionId=${sessionId}` }
   });
   const vehicles = await vehiclesRes.json();
 

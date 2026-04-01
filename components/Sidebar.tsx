@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, CalendarDays, User, Settings, LogOut, MapPin, ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import { useSession } from "@/components/session/AppSessionProvider";
+import { useUI } from "@/components/ui/UIProvider";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -20,12 +21,21 @@ export function Sidebar({ user }: { user?: {userId: string, fullName: string, em
   const { activeReservation, isSidebarCollapsed, setIsSidebarCollapsed } = useSession();
 
   const onToggle = () => setIsSidebarCollapsed(!isSidebarCollapsed);
+  const { showConfirmation } = useUI();
 
   const handleLogout = async () => {
-    const response = await fetch('/api/logout')
-    const data = await response.json()
-    if (!data.ok) console.log('unable to logout')
-    router.replace('/')
+    showConfirmation({
+      title: "Confirm Logout",
+      message: "Are you sure you want to log out of your session? You will need to re-authenticate to manage your active reservations.",
+      confirmText: "Logout",
+      cancelText: "Stay Logged In",
+      onConfirm: async () => {
+        const response = await fetch('/api/logout');
+        const data = await response.json();
+        if (!data.ok) console.log('unable to logout');
+        router.replace('/');
+      }
+    });
   }
 
   return (

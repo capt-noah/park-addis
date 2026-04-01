@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 };
 
 import { AppSessionProvider } from "@/components/session/AppSessionProvider";
+import { UIProvider } from "@/components/ui/UIProvider";
 
 export default function RootLayout({
   children,
@@ -26,9 +27,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${outfit.variable} font-sans antialiased text-foreground bg-background`}>
         <ThemeProvider>
-          <AppSessionProvider>
-            {children}
-          </AppSessionProvider>
+          <UIProvider>
+            <AppSessionProvider>
+              {children}
+            </AppSessionProvider>
+          </UIProvider>
         </ThemeProvider>
       </body>
     </html>
