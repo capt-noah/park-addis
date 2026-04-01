@@ -30,23 +30,9 @@ export function Sidebar({ user }: { user?: {userId: string, fullName: string, em
       confirmText: "Logout",
       cancelText: "Stay Logged In",
       onConfirm: async () => {
-        const getSessionId = () => {
-          const value = `; ${document.cookie}`;
-          const parts = value.split(`; sessionId=`);
-          if (parts.length === 2) return parts.pop()?.split(";").shift();
-        }
-        const sessionId = getSessionId();
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`, {
-          credentials: 'include',
-          headers: {
-            ...(sessionId ? { "Authorization": `Bearer ${sessionId}` } : {})
-          }
-        });
+        const response = await fetch("/api/auth/logout");
         const data = await response.json();
         if (!data.ok) console.log('unable to logout');
-        // Clear local cookie
-        document.cookie = "sessionId=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
         router.replace('/');
       }
     });

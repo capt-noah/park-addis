@@ -25,8 +25,7 @@ authRouter.post("/register", async (req, res) => {
 
   res.cookie("sessionId", sessionId, {
     httpOnly: true,
-    sameSite: "none",
-    secure: true,
+    sameSite: "lax",
     path: "/",
   });
   return res.status(201).json({ message: "User Created Successfully", sessionId });
@@ -42,8 +41,7 @@ authRouter.post("/login", async (req, res) => {
 
   res.cookie("sessionId", sessionId, { 
     httpOnly: true, 
-    sameSite: "none", 
-    secure: true, 
+    sameSite: "lax", 
     path: "/" 
   });
 
@@ -66,8 +64,7 @@ authRouter.get("/me", authMiddleware, async (req, res) => {
 authRouter.get("/logout", (req, res) => {
   res.clearCookie("sessionId", {
     httpOnly: true,
-    sameSite: "none",
-    secure: true,
+    sameSite: "lax",
     path: "/",
   });
   return res.status(200).json({ ok: true, message: "Logged out successfully" });

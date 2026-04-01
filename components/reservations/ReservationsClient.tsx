@@ -33,19 +33,8 @@ export default function ReservationsClient({ initialReservations, user }: { init
       cancelText: "Keep it",
       onConfirm: async () => {
         try {
-          const getSessionId = () => {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; sessionId=`);
-            if (parts.length === 2) return parts.pop()?.split(";").shift();
-          }
-          const sessionId = getSessionId();
-
-          const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reservation?id=${reservationId}`, {
+          const response = await fetch(`/api/reservation?id=${reservationId}`, {
             method: 'DELETE',
-            credentials: 'include',
-            headers: {
-              ...(sessionId ? { "Authorization": `Bearer ${sessionId}` } : {})
-            }
           });
 
           if (response.ok) {

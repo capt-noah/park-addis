@@ -22,21 +22,15 @@ export default function LoginPage() {
     setLoading(true)
     setError("")
 
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`, {
+    const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify({ email, password }),
     });
     
     if (res.ok) {
-      const data = await res.json();
-      // Sync session to local cookie for Server Components
-      if (data.sessionId) {
-        document.cookie = `sessionId=${data.sessionId}; path=/; max-age=86400; samesite=lax`;
-      }
       showNotification("Login successful!", "success");
       router.replace("/dashboard")
       router.refresh()

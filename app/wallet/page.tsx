@@ -38,20 +38,11 @@ export default function WalletPage() {
 
   const fetchTransactionsOnly = useCallback(async (wId: string) => {
     try {
-      const getSessionId = () => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; sessionId=`);
-        if (parts.length === 2) return parts.pop()?.split(";").shift();
-      }
-      const sessionId = getSessionId();
-
-      const txRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/transaction`, {
+      const txRes = await fetch("/api/wallet/transaction", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          ...(sessionId ? { "Authorization": `Bearer ${sessionId}` } : {})
         },
-        credentials: "include",
         body: JSON.stringify({ walletId: wId })
       });
       
@@ -69,21 +60,10 @@ export default function WalletPage() {
       setIsLoading(true);
       
       // 1. Get User
-      const getSessionId = () => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; sessionId=`);
-        if (parts.length === 2) return parts.pop()?.split(";").shift();
-      }
-      const sessionId = getSessionId();
-
-      const userRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/me`, {
-        credentials: "include",
-        headers: {
-          ...(sessionId ? { "Authorization": `Bearer ${sessionId}` } : {})
-        }
-      });
+      const userRes = await fetch("/api/auth/me");
       if (!userRes.ok) throw new Error("Auth failed");
       const userData = await userRes.json();
+      
       setUserId(userData.userId);
       setUserName(userData.fullName?.toUpperCase() || "NOAH SAMUEL");
       setUser({
@@ -94,12 +74,7 @@ export default function WalletPage() {
       });
 
       // 2. Get Wallet (Session-based)
-      const walletRes = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet`, {
-        credentials: "include",
-        headers: {
-          ...(sessionId ? { "Authorization": `Bearer ${sessionId}` } : {})
-        }
-      });
+      const walletRes = await fetch("/api/wallet");
       
 
       if (walletRes.ok) {
@@ -134,20 +109,12 @@ export default function WalletPage() {
   const handleTopUp = async (amount: number) => {
     try {
       setIsToppingUp(true);
-      const getSessionId = () => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; sessionId=`);
-        if (parts.length === 2) return parts.pop()?.split(";").shift();
-      }
-      const sessionId = getSessionId();
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/wallet/topup`, {
+      const response = await fetch("/api/wallet/topup", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          ...(sessionId ? { "Authorization": `Bearer ${sessionId}` } : {})
         },
-        credentials: "include",
         body: JSON.stringify({ amount })
       });
 

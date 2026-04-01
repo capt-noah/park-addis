@@ -106,20 +106,11 @@ export default function LocationDetailsClient({
             return;
           }
 
-          const getSessionId = () => {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; sessionId=`);
-            if (parts.length === 2) return parts.pop()?.split(";").shift();
-          }
-          const sessionId = getSessionId();
-
-          const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/reservation`, {
+          const res = await fetch("/api/reservation", {
             method: "POST",
             headers: { 
               "Content-Type": "application/json",
-              ...(sessionId ? { "Authorization": `Bearer ${sessionId}` } : {})
             },
-            credentials: "include",
             body: JSON.stringify({
               spotId: spot.id,
               vehicleId: selectedVehicle.id,
