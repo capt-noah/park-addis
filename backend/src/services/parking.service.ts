@@ -57,16 +57,30 @@ export async function getParkingLocation(id: string) {
 }
 
 export async function getParkingLocationsJson() {
-    const geoJson = await db.execute(sql`
-        SELECT 
-              id,
-              name,
-              address,
-              ST_AsGeoJson(geom)::JSON AS geometry
+    const response = await db.execute(sql`
+        SELECT
+            JSON_BUILD_OBJECT(
+                'type', 'FeatureCollection',
+                'features', JSON_AGG(
+                    JSON_BUILD_OBJECT(
+                        'type', 'Feature',
+                        'geometry', ST_AsGeoJson(geom)::json,
+                        'properties', JSON_BUILD_OBJECT(
+                            'id', id,
+                            'name', name,
+                            'address', address,
+                            'ratingsSum', ratings_sum,
+                            'ratingsCount', ratings_count,
+                            'ratings', CASE WHEN ratings_count > 0 THEN ratings_sum / ratings_count ELSE 0 END,
+                            'price', display_price_per_hour
+                        )
+                    )
+                )
+            ) AS geojson
         FROM parking_locations
-        `)
+    `);
     
-    return geoJson ?? null
+    return response[0]?.geojson ?? null;
 }
 
 export async function getParkingSpot(spotId: string) {
