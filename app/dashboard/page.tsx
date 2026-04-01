@@ -1,4 +1,4 @@
-import { DashboardLayout } from "@/frontend/components/DashboardLayout";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { cookies } from "next/headers";
 
-import { RecentHistoryTable } from "@/frontend/components/dashboard/RecentHistoryTable";
-import { ActiveSessionCard } from "@/frontend/components/dashboard/ActiveSessionCard";
+import { RecentHistoryTable } from "@/components/dashboard/RecentHistoryTable";
+import { ActiveSessionCard } from "@/components/dashboard/ActiveSessionCard";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
