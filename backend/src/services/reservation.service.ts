@@ -1,5 +1,3 @@
-
-
 import { db } from "../db"
 import { reservations } from "../schema/reservations"
 import { parkingSpots } from "../schema/parkingSpots"
@@ -29,13 +27,14 @@ export async function reserveSpot(userId: string, spotId: string, vehicleId: str
 								status: 'RESERVED' 
 							 })
 							 .returning()
+							 .then(r => r[0])
 	
-	if (!response[0]) return null
+	if (!response) return null
 
 	// Decrement available slots on reservation
 	await updateParkingAvailability(spotId, 0, 1)
 	
-	return response[0]
+	return response
 }
 
 export async function getUserReservations(userId: string) {
@@ -107,15 +106,16 @@ export async function validateQRToken(token: string) {
 							 .from(reservations)
 							 .where(eq(reservations.qrToken, token))
 							 .limit(1)
+							 .then(r => r[0])
 	
-	const reservation = response[0]
+	const reservation = response
 	if (!reservation) throw new Error("Invalid QR Token")
 
 	if (reservation.status === 'RESERVED') {
 		return await startSession(reservation.id)
 	} else if (reservation.status === 'ACTIVE') {
-		await completeSession(reservation.id)
-		return await createPayment(token)
+		return await completeSession(reservation.id)
+		// return await createPayment(token)
 	} else if (reservation.status === 'COMPLETED') {
 		if(!reservation.actualStartTime || !reservation.actualEndTime) return null
 		return await createPayment(token)
@@ -123,8 +123,6 @@ export async function validateQRToken(token: string) {
 		throw new Error(`Reservation is already ${reservation.status}`)
 	}
 }
-
-
 
 export async function startSession(reservationId: string) {
 	const response = await db.update(reservations)
@@ -134,7 +132,8 @@ export async function startSession(reservationId: string) {
 							 })
 							 .where(eq(reservations.id, reservationId))
 							 .returning()
-	return response[0] || null
+							 .then(r => r[0])
+	return response || null
 }
 
 export async function completeSession(reservationId: string) {
@@ -145,13 +144,14 @@ export async function completeSession(reservationId: string) {
 							 })
 							 .where(eq(reservations.id, reservationId))
 							 .returning()
+							 .then(r => r[0])
 	
-	if (response[0]) {
+	if (response) {
 		// Restore parking availability when session is completed
-		await updateParkingAvailability(response[0].spotId, 1, 0)
+		await updateParkingAvailability(response.spotId, 1, 0)
 	}
 
-	return response[0] || null
+	return response || null
 }
 
 export async function cancelReservation(reservationId: string) {
@@ -159,13 +159,14 @@ export async function cancelReservation(reservationId: string) {
 								.set({ status: 'CANCELLED' })
 								.where(eq(reservations.id, reservationId))
 								.returning()
+								.then(r => r[0])
 	
-	if(!reservation[0]) return null
+	if(!reservation) return null
 
 	// Increment available slots on cancellation
-	await updateParkingAvailability(reservation[0].spotId, 1, 0)
+	await updateParkingAvailability(reservation.spotId, 1, 0)
 	
-	return reservation[0]
+	return reservation
 }
 
 export async function extendReservation(reservationId: string, extraMinutes: number) {
@@ -173,8 +174,9 @@ export async function extendReservation(reservationId: string, extraMinutes: num
 							 .from(reservations)
 							 .where(eq(reservations.id, reservationId))
 							 .limit(1)
+							 .then(r => r[0])
 	
-	const reservation = current[0]
+	const reservation = current
 	if (!reservation) throw new Error("Reservation not found")
 
 	const newEndTime = new Date(reservation.endTime)
