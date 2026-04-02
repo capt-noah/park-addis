@@ -63,6 +63,7 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
     
     const first_name = fullName.split(' ')[0]
     const last_name = fullName.split(' ')[1]
+    phone_number = 0 + phone_number
 
     const response = chapa.initialize({
         first_name,
