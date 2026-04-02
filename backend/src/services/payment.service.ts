@@ -59,6 +59,17 @@ export async function completePayment(transactionId: string) {
     return response[0] ?? null
 }
 
+export async function failPayment(transactionId: string) {
+    const response = await db.update(payments)
+                             .set({
+                                status: 'FAILED'
+                              })
+                             .where(eq(payments.transactionId, transactionId))
+                             .returning()
+                       
+    return response[0] ?? null
+}
+
 export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string}) {
     
     const first_name = fullName.split(' ')[0]

@@ -62,9 +62,16 @@ export async function getUserReservations(userId: string) {
 	.innerJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
 	.leftJoin(payments, eq(reservations.id, payments.reservationId))
 	.where(eq(reservations.userId, userId))
-	.orderBy(desc(reservations.startTime));
+	.orderBy(desc(reservations.startTime), desc(payments.createdAt));
 
-	return userReservations;
+	const uniqueReservations = new Map();
+	for (const row of userReservations) {
+		if (!uniqueReservations.has(row.id)) {
+			uniqueReservations.set(row.id, row);
+		}
+	}
+
+	return Array.from(uniqueReservations.values());
 }
 
 export async function getActiveReservation(userId: string) {
