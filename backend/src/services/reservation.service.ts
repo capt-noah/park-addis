@@ -114,7 +114,8 @@ export async function validateQRToken(token: string) {
 	if (reservation.status === 'RESERVED') {
 		return await startSession(reservation.id)
 	} else if (reservation.status === 'ACTIVE') {
-		return await completeSession(reservation.id)
+		await completeSession(reservation.id)
+		return await createPayment(token)
 	} else if (reservation.status === 'COMPLETED') {
 		if(!reservation.actualStartTime || !reservation.actualEndTime) return null
 		return await createPayment(token)

@@ -233,7 +233,23 @@ function UnpaidDetails({ reservation, onClose }: any) {
   const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
   const resFee      = 5.00;
   const svcFee      = 2.50;
-  const totalDue    = (parkingFee + resFee + svcFee).toFixed(2);
+  const totalDue = (parkingFee + resFee + svcFee).toFixed(2);
+  
+  const handlePayNow = async () => {
+    const paymentResponse = await fetch(`/api/payment/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({qrToken: reservation.qrToken})
+    })
+
+    const payment = await paymentResponse.json()
+
+    if (payment.status === "success" && payment.data?.checkout_url) {
+      window.location.href = payment.data.checkout_url
+    }
+  }
 
   return (
     <>
@@ -296,7 +312,7 @@ function UnpaidDetails({ reservation, onClose }: any) {
         </div>
       </div>
       <div className="px-8 pb-10 pt-2">
-        <button className="w-full bg-[#004D40] hover:bg-[#004D40]/90 text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]">
+        <button onClick={handlePayNow} className="w-full bg-[#004D40] hover:bg-[#004D40]/90 text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]">
           <Banknote size={20} className="group-hover:scale-110 transition-transform" />
           Pay Now
         </button>

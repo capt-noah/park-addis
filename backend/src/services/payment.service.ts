@@ -15,7 +15,7 @@ export async function createPayment(qrToken: string) {
     const response = await db.select()
                              .from(reservations)
                              .innerJoin(parkingSpots, eq(parkingSpots.id, reservations.spotId))
-                             .innerJoin(users, eq(users.id, reservations.id))
+                             .innerJoin(users, eq(users.id, reservations.userId))
                              .where(eq(reservations.qrToken, qrToken))
                              
     
@@ -43,9 +43,9 @@ export async function createPayment(qrToken: string) {
                                  transactionId: tx_ref
                              })
     
-    const chapa = await initializeChapaPayment({amount, email: user.email, fullName: user.fullName, phone_number: user.phoneNumber, tx_ref})
+    const paymentSession = await initializeChapaPayment({amount, email: user.email, fullName: user.fullName, phone_number: user.phoneNumber, tx_ref})
     
-    return chapa ?? null
+    return paymentSession ?? null
 }
 
 export async function completePayment(transactionId: string) {

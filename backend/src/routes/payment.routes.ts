@@ -9,8 +9,14 @@ paymentRouter.post('/create', async (req, res) => {
     const payment = await validateQRToken(qrToken)
 
     if(!payment) return res.status(401).json({error: "Payment Failed"})
+    
+    // Check if it's a payment initialization response with a checkout_url
+    if (typeof payment === 'object' && 'data' in payment && payment.data) {
+        return res.status(200).json({ checkout_url: (payment as any).data.checkout_url })
+    }
 
-    return payment
+    // Otherwise, return the underlying reservation/session details
+    return res.status(200).json(payment)
 
 })
 
