@@ -7,7 +7,7 @@ import { reservations } from "../schema/reservations"
 import crypto from "crypto"
 import { users } from "../schema/users"
 
-import { env } from "../config/env"
+// import { env } from "../config/env"
 import chapa from "../chapa"
 
 
@@ -74,8 +74,8 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
         currency: "ETB",
         email,
         tx_ref,
-        callback_url: `${env.APP_URL}/api/payment/callback`,
-        return_url: `${env.APP_URL}/reservations`,
+        callback_url: `${process.env.APP_URL}/api/payment/callback`,
+        return_url: `${process.env.APP_URL}/reservations`,
         customization: {
             title: "Park Addis Payment",
             description: "Parking Reservation Payment"
