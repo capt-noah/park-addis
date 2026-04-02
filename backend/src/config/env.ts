@@ -12,5 +12,5 @@ export const env = {
     DATABASE_URL: required("DATABASE_URL"),
     PORT: required("PORT"),
     CHAPA_SECRET_KEY: required("CHAPA_SECRET_KEY"),
-    VERCEL_URL: require("VERCEL_URL")
+    VERCEL_URL: required("VERCEL_URL")
 }
