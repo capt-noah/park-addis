@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Clock, Banknote, X, Car, CreditCard, CheckCircle2, Timer, XCircle } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import Loader from "../Loader";
 
 export function TicketModal({ reservation, onClose }: { reservation: any; onClose: () => void }) {
   if (!reservation) return null;
@@ -347,14 +348,16 @@ function UnpaidDetails({ reservation, onClose }: any) {
         <button 
           onClick={handlePayNow} 
           disabled={isLoading}
-          className="w-full bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
+          className="w-full bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-80 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
         >
           {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            <Loader size="sm" color="bg-white/90" />
           ) : (
-            <Banknote size={20} className="group-hover:scale-110 transition-transform" />
+            <>
+              <Banknote size={20} className="group-hover:scale-110 transition-transform" />
+              <span>Pay Now</span>
+            </>
           )}
-          {isLoading ? "Processing..." : "Pay Now"}
         </button>
       </div>
     </>
