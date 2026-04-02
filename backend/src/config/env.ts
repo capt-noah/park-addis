@@ -1,3 +1,4 @@
+import "dotenv/config"
 
 function required(name: string): string{
     const value = process.env[name]
@@ -9,5 +10,6 @@ function required(name: string): string{
 
 export const env = {
     DATABASE_URL: required("DATABASE_URL"),
-    PORT: required("PORT")
+    PORT: required("PORT"),
+    CHAPA_SECRET_KEY: required("CHAPA_SECRET_KEY")
 }
