@@ -7,7 +7,6 @@ import { reservations } from "../schema/reservations"
 import crypto from "crypto"
 import { users } from "../schema/users"
 
-// import { env } from "../config/env"
 import chapa from "../chapa"
 
 

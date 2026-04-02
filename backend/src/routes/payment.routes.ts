@@ -4,20 +4,29 @@ import { completePayment, verifyChapaPayment } from "../services/payment.service
 const paymentRouter = express.Router()
 
 paymentRouter.post('/create', async (req, res) => {
-    const { qrToken } = req.body
-    
-    const payment = await validateQRToken(qrToken)
+    try {
+        const { qrToken } = req.body
+        
+        if (!qrToken) {
+            return res.status(400).json({ error: "Missing QR Token" })
+        }
 
-    if(!payment) return res.status(401).json({error: "Payment Failed"})
-    
-    // Check if it's a payment initialization response with a checkout_url
-    if (typeof payment === 'object' && 'data' in payment && payment.data) {
-        return res.status(200).json({ checkout_url: (payment as any).data.checkout_url })
+        const payment = await validateQRToken(qrToken)
+
+        if (!payment) {
+            return res.status(401).json({ error: "Payment Failed" })
+        }
+        
+        // Return the full payment object (including status and data if from Chapa)
+        // This matches the frontend expectation: if(payment.status === 'success') ...
+        return res.status(200).json(payment)
+    } catch (error: any) {
+        console.error("Payment creation error:", error)
+        return res.status(500).json({ 
+            error: error.message || "Internal Server Error",
+            details: "An unexpected error occurred while creating the payment session."
+        })
     }
-
-    // Otherwise, return the underlying reservation/session details
-    return res.status(200).json(payment)
-
 })
 
 paymentRouter.post('/callback', async (req, res) => {

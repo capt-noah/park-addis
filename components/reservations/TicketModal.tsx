@@ -235,19 +235,46 @@ function UnpaidDetails({ reservation, onClose }: any) {
   const svcFee      = 2.50;
   const totalDue = (parkingFee + resFee + svcFee).toFixed(2);
   
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   const handlePayNow = async () => {
-    const paymentResponse = await fetch(`/api/payment/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({qrToken: reservation.qrToken})
-    })
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      const paymentResponse = await fetch(`/api/payment/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({qrToken: reservation.qrToken})
+      })
 
-    const payment = await paymentResponse.json()
+      if (!paymentResponse.ok) {
+        let errorMsg = "Payment initialization failed."
+        try {
+          const errorData = await paymentResponse.json()
+          errorMsg = errorData.error || errorMsg
+        } catch (e) {
+          // If not JSON, it might be HTML or empty
+          errorMsg = `Server error: ${paymentResponse.status}`
+        }
+        throw new Error(errorMsg)
+      }
 
-    if (payment.status === "success" && payment.data?.checkout_url) {
-      window.location.href = payment.data.checkout_url
+      const payment = await paymentResponse.json()
+
+      if (payment.status === "success" && payment.data?.checkout_url) {
+        window.location.href = payment.data.checkout_url
+      } else {
+        throw new Error(payment.message || "Unable to initiate payment session.")
+      }
+    } catch (err: any) {
+      console.error("Payment error:", err)
+      setError(err.message)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -312,9 +339,22 @@ function UnpaidDetails({ reservation, onClose }: any) {
         </div>
       </div>
       <div className="px-8 pb-10 pt-2">
-        <button onClick={handlePayNow} className="w-full bg-[#004D40] hover:bg-[#004D40]/90 text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]">
-          <Banknote size={20} className="group-hover:scale-110 transition-transform" />
-          Pay Now
+        {error && (
+          <p className="text-[10px] text-red-500 font-bold text-center mb-3 animate-shake">
+            {error}
+          </p>
+        )}
+        <button 
+          onClick={handlePayNow} 
+          disabled={isLoading}
+          className="w-full bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
+        >
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Banknote size={20} className="group-hover:scale-110 transition-transform" />
+          )}
+          {isLoading ? "Processing..." : "Pay Now"}
         </button>
       </div>
     </>
