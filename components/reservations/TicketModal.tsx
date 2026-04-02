@@ -348,10 +348,10 @@ function UnpaidDetails({ reservation, onClose }: any) {
         <button 
           onClick={handlePayNow} 
           disabled={isLoading}
-          className="w-full bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-80 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
+          className="w-full h-[56px] bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-80 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
         >
           {isLoading ? (
-            <Loader size="sm" color="bg-white/90" />
+            <Loader size="md" color="bg-white/90" />
           ) : (
             <>
               <Banknote size={20} className="group-hover:scale-110 transition-transform" />
