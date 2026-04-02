@@ -1,7 +1,7 @@
 import "dotenv/config"
 
-function required(name: string): string{
-    const value = process.env[name]
+function required(name: string, defaultValue?: string): string{
+    const value = process.env[name] || defaultValue
 
     if (!value) throw new Error(`${name}: Not Found`)
     
@@ -12,5 +12,5 @@ export const env = {
     DATABASE_URL: required("DATABASE_URL"),
     PORT: required("PORT"),
     CHAPA_SECRET_KEY: required("CHAPA_SECRET_KEY"),
-    VERCEL_URL: required("VERCEL_URL")
+    APP_URL: required("APP_URL", "http://localhost:3000")
 }
