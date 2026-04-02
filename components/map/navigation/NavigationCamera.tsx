@@ -37,11 +37,12 @@ export function NavigationCamera() {
 
     map.easeTo({
       center: [lng, lat],
-      pitch: 65,
-      zoom: 17.5,
+      pitch: 70, // Deep 3D perspective
+      zoom: 18.5, // Closer to the action
       bearing: smoothedBearing,
-      duration: 1000, // Smooth transition duration
-      easing: (t) => t, // Linear easing for constant movement
+      duration: 1200, // Slightly longer for maximum smoothness
+      padding: { bottom: 200 }, // Shift user to the bottom of the screen
+      easing: (t) => t, 
     });
 
     lastUpdate.current = now;

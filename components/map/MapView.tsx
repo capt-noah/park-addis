@@ -63,7 +63,17 @@ function MapView({ displayedLocations, onLocationClick, selectedLocation }: MapV
               status="ACTIVE"
               distance={navigation.remainingDistance}
               duration={navigation.remainingDuration}
-              onDirectionsClick={() => actions.startNavigation()}
+              onDirectionsClick={async () => {
+                // Request orientation permissions for iOS
+                if (typeof DeviceOrientationEvent !== "undefined" && (DeviceOrientationEvent as any).requestPermission) {
+                  try {
+                    await (DeviceOrientationEvent as any).requestPermission();
+                  } catch (e) {
+                    console.error("Orientation permission error:", e);
+                  }
+                }
+                actions.startNavigation();
+              }}
             />
             
             {/* Dedicated Close Navigation Button */}
