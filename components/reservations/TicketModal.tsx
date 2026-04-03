@@ -17,7 +17,7 @@ export function TicketModal({ reservation, onClose }: { reservation: any; onClos
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="relative w-full max-w-[360px] max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl flex flex-col border-0 dark:border dark:border-slate-800/80 animate-in zoom-in-95 duration-300 scrollbar-hide">
+      <div className="relative w-full max-w-[360px] max-h-[90vh] overflow-y-auto overflow-x-hidden bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl flex flex-col border-0 dark:border dark:border-slate-800/80 animate-in zoom-in-95 duration-300 scrollbar-hide">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -27,11 +27,11 @@ export function TicketModal({ reservation, onClose }: { reservation: any; onClos
         </button>
 
         {/* Top: Branding + QR */}
-        <div className="pt-6 pb-4 px-8 flex flex-col items-center border-b border-dashed border-slate-200 dark:border-slate-800/80 relative">
+        <div className="pt-4 pb-2 px-8 flex flex-col items-center border-b border-dashed border-slate-200 dark:border-slate-800/80 relative">
           <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
           <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
 
-          <div className="flex items-center gap-2 mb-5 mt-2">
+          <div className="flex items-center gap-2 mb-3 mt-1">
             <div className="w-8 h-8 bg-[#004D40] rounded-lg flex items-center justify-center shadow-sm">
               <span className="text-white font-bold text-xl">P</span>
             </div>
@@ -172,7 +172,7 @@ function ActiveDetails({ reservation, onClose }: any) {
 
   return (
     <>
-      <div className="px-8 py-5 space-y-4 flex-1">
+      <div className="px-8 py-4 space-y-3 flex-1">
         {/* Countdown + progress */}
         <div className="bg-[#004D40]/5 dark:bg-[#10B981]/5 rounded-2xl p-4 border border-[#004D40]/10 dark:border-[#10B981]/10">
           <div className="flex items-center justify-between mb-3">
@@ -232,9 +232,9 @@ function UnpaidDetails({ reservation, onClose }: any) {
   const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
   const baseRate    = parseFloat(reservation.pricePerHour || "0");
   const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
-  const resFee      = 1.00;
-  const svcFee      = 1.00;
-  const totalDue = (parkingFee + resFee + svcFee).toFixed(2);
+  const resFee      = 0.00;
+  const svcFee      = 0.00;
+  const totalDue = (parseFloat(parkingFee.toFixed(2)) + resFee + svcFee).toFixed(2);
   
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -296,15 +296,15 @@ function UnpaidDetails({ reservation, onClose }: any) {
 
   return (
     <>
-      <div className="px-8 py-5 space-y-4 flex-1 relative overflow-hidden">
-        {/* UNPAID watermark */}
+      <div className="px-8 py-4 space-y-3 flex-1 relative overflow-hidden">
+        {/* UNPAID watermark layer to prevent horizontal scroll */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0">
-          <span className="text-red-500/10 font-black text-6xl uppercase tracking-[0.3em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
+          <span className="text-red-500/10 font-black text-5xl uppercase tracking-[0.3em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
             UNPAID
           </span>
         </div>
         
-        <div className="relative z-10 space-y-4">
+        <div className="relative z-10 space-y-3">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Date</p>
@@ -424,19 +424,19 @@ function PaidDetails({ reservation, onClose }: any) {
   const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
   const baseRate    = parseFloat(reservation.pricePerHour || "0");
   const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
-  const resFee      = 1.00;
-  const svcFee      = 1.00;
+  const resFee      = 0.00;
+  const svcFee      = 0.00;
   const totalPaid   = (parkingFee + resFee + svcFee).toFixed(2);
 
   return (
     <>
-      <div className="px-8 py-5 space-y-4 flex-1 relative overflow-hidden">
+      <div className="px-8 py-4 space-y-3 flex-1 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0">
-          <span className="text-emerald-500/10 font-black text-6xl uppercase tracking-[0.3em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
+          <span className="text-emerald-500/10 font-black text-5xl uppercase tracking-[0.3em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
             PAID
           </span>
         </div>
-        <div className="relative z-10 space-y-4">
+        <div className="relative z-10 space-y-3">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Date</p>
