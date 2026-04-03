@@ -30,8 +30,23 @@ export async function createPayment(qrToken: string) {
     const durationMs = new Date(reservation.actualEndTime).getTime() - new Date(reservation.actualStartTime).getTime()
 
     const hours: number = durationMs / (1000 * 60 * 60)
+    const rawAmount = hours * Number(parkings.pricePerHour)
+    const amount: string = rawAmount.toFixed(2)
 
-    const amount: string = String(hours * Number(parkings.pricePerHour))
+    // Handle 0-cost or very low cost sessions (e.g. under 1 minute)
+    if (rawAmount < 1.0) {
+        console.log(`[PAYMENT] Amount ${amount} is too low for Chapa. Marking reservation ${reservation.id} as PAID automatically.`);
+        
+        await db.update(reservations)
+                .set({ status: 'PAID' })
+                .where(eq(reservations.id, reservation.id));
+
+        return { 
+            status: 'success', 
+            message: 'Reservation marked as paid automatically (0 cost)',
+            data: { checkout_url: null, isFree: true } 
+        };
+    }
 
     const payResponse = await db.insert(payments)
                              .values({

@@ -17,7 +17,7 @@ export function TicketModal({ reservation, onClose }: { reservation: any; onClos
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="relative w-full max-w-[360px] bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border-0 dark:border dark:border-slate-800/80 animate-in zoom-in-95 duration-300">
+      <div className="relative w-full max-w-[360px] max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl flex flex-col border-0 dark:border dark:border-slate-800/80 animate-in zoom-in-95 duration-300 scrollbar-hide">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -27,7 +27,7 @@ export function TicketModal({ reservation, onClose }: { reservation: any; onClos
         </button>
 
         {/* Top: Branding + QR */}
-        <div className="pt-8 pb-6 px-8 flex flex-col items-center border-b border-dashed border-slate-200 dark:border-slate-800/80 relative">
+        <div className="pt-6 pb-4 px-8 flex flex-col items-center border-b border-dashed border-slate-200 dark:border-slate-800/80 relative">
           <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
           <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
 
@@ -232,8 +232,8 @@ function UnpaidDetails({ reservation, onClose }: any) {
   const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
   const baseRate    = parseFloat(reservation.pricePerHour || "0");
   const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
-  const resFee      = 0.50;
-  const svcFee      = 0.50;
+  const resFee      = 0.00;
+  const svcFee      = 0.00;
   const totalDue = (parkingFee + resFee + svcFee).toFixed(2);
   
   const [isLoading, setIsLoading] = useState(false)
@@ -272,10 +272,15 @@ function UnpaidDetails({ reservation, onClose }: any) {
       const payment = await paymentResponse.json()
 
       if (paymentMethod === "chapa") {
+        if (payment.status === "success" && payment.data?.isFree) {
+          window.location.reload(); // Instantly paid
+          return;
+        }
+        
         if (payment.status === "success" && payment.data?.checkout_url) {
           window.location.href = payment.data.checkout_url
         } else {
-          throw new Error(payment.message || "Unable to initiate payment session.")
+          throw new Error(payment.message || "Unable to initiate payment session. Please try again.")
         }
       } else {
         // Wallet Success
@@ -378,7 +383,7 @@ function UnpaidDetails({ reservation, onClose }: any) {
           </div>
         </div>
       </div>
-      <div className="px-8 pb-10 pt-2">
+      <div className="px-8 pb-8 pt-0">
         {error && (
           <p className="text-[10px] text-red-500 font-bold text-center mb-3 animate-shake">
             {error}
@@ -387,14 +392,18 @@ function UnpaidDetails({ reservation, onClose }: any) {
         <button 
           onClick={handlePayNow} 
           disabled={isLoading}
-          className="w-full h-[56px] bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-80 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
+          className="w-full h-[52px] bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-80 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
         >
           {isLoading ? (
             <Loader size="md" color="bg-white/90" />
           ) : (
             <>
               {paymentMethod === "chapa" ? <Banknote size={20} /> : <Wallet size={20} />}
-              <span>Pay with {paymentMethod === "chapa" ? "Chapa" : "Wallet"}</span>
+              <span>
+                {parseFloat(totalDue) === 0 
+                  ? "Complete for Free" 
+                  : `Pay with ${paymentMethod === "chapa" ? "Chapa" : "Wallet"}`}
+              </span>
             </>
           )}
         </button>
@@ -415,8 +424,8 @@ function PaidDetails({ reservation, onClose }: any) {
   const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
   const baseRate    = parseFloat(reservation.pricePerHour || "0");
   const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
-  const resFee      = 5.00;
-  const svcFee      = 2.50;
+  const resFee      = 0.00;
+  const svcFee      = 0.00;
   const totalPaid   = (parkingFee + resFee + svcFee).toFixed(2);
 
   return (

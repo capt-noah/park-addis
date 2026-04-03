@@ -8,6 +8,7 @@ import crypto from "crypto"
 
 import Decimal from 'decimal.js'
 import { users } from "../schema/users";
+import { reservations } from "../schema/reservations";
 
 
 export async function createWallet(userId: string) {
@@ -172,10 +173,11 @@ export async function payReservationFromWallet(userId: string, reservationId: st
         const tx_id = crypto.randomUUID();
         
         // 1. Record the transaction record first (Status: SUCCESS because it's wallet-to-wallet)
+        // Store as positive amount; balance calculation logic handles the subtraction based on type.
         const walletTx = await tx.insert(walletTransactions)
                                  .values({
                                     walletId: wallet.id,
-                                    amount: new Decimal(amount).negated().toString(),
+                                    amount: new Decimal(amount).toString(),
                                     type: 'RESERVATION_PAYMENT',
                                     status: 'SUCCESS',
                                     referenceId: tx_id,
@@ -192,7 +194,12 @@ export async function payReservationFromWallet(userId: string, reservationId: st
                     amount,
                 });
 
-        // 3. Reconstruct the balance from history
+        // 3. Update the Reservation status to PAID
+        await tx.update(reservations)
+                .set({ status: 'PAID' })
+                .where(eq(reservations.id, reservationId));
+
+        // 4. Reconstruct the balance from history
         const updatedWallet = await syncWalletBalance(wallet.id, tx);
 
         // 4. Double-check that the operation didn't push the user into negative balance (Race condition check)
