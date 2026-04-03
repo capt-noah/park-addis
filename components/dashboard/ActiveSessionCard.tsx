@@ -25,33 +25,33 @@ export function ActiveSessionCard({ reservation }: { reservation: any }) {
         {/* Animated gradient border effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-[#004D40] via-emerald-400 to-[#004D40] opacity-20 animate-bg-pan z-0" />
         
-        <div className="relative z-10 m-[2px] bg-white rounded-[22px] p-6 shadow-sm border border-emerald-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 m-[2px] bg-white dark:bg-slate-900 rounded-[22px] p-6 shadow-sm border border-emerald-100 dark:border-emerald-900/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
           
           <div className="flex flex-col sm:flex-row sm:items-center gap-5">
             {/* Status indicator */}
-            <div className="relative w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0 border border-emerald-100/50">
-              <div className="absolute top-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white translate-x-1 -translate-y-1 animate-pulse" />
-              <Clock size={24} className="text-[#004D40] opacity-80" />
+            <div className="relative w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0 border border-emerald-100/50 dark:border-emerald-800/30">
+              <div className="absolute top-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 translate-x-1 -translate-y-1 animate-pulse" />
+              <Clock size={24} className="text-[#004D40] dark:text-emerald-400 opacity-80" />
             </div>
 
             {/* Session Info */}
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-extrabold tracking-widest text-[#004D40] bg-[#004D40]/10 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] uppercase font-extrabold tracking-widest text-[#004D40] dark:text-emerald-400 bg-[#004D40]/10 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full">
                   {isReserved ? "Upcoming Reservation" : "Active Parking Session"}
                 </span>
               </div>
-              <h3 className="text-xl font-black text-slate-900 leading-tight">
+              <h3 className="text-xl font-black text-slate-900 dark:text-white leading-tight">
                 {reservation.locationName}
               </h3>
               
-              <div className="flex flex-wrap items-center gap-3 mt-1 text-xs font-bold text-slate-500">
-                <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
-                  <Clock size={12} className="text-[#004D40]/60" />
+              <div className="flex flex-wrap items-center gap-3 mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 px-2 py-1 rounded-lg">
+                  <Clock size={12} className="text-[#004D40]/60 dark:text-emerald-400/60" />
                   <span>{fmt(startTime)} – {fmt(endTime)}</span>
                 </div>
-                <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-lg">
-                  <Car size={12} className="text-[#004D40]/60" />
+                <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800/50 px-2 py-1 rounded-lg">
+                  <Car size={12} className="text-[#004D40]/60 dark:text-emerald-400/60" />
                   <span>{reservation.plateNumber || "N/A"}</span>
                 </div>
               </div>
@@ -62,7 +62,7 @@ export function ActiveSessionCard({ reservation }: { reservation: any }) {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href={`/locations?selected=${encodeURIComponent(reservation.locationName)}`}
-              className="flex items-center justify-center gap-2 px-4 py-3 min-w-[100px] rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 hover:border-slate-300 transition-all active:scale-95"
+              className="flex items-center justify-center gap-2 px-4 py-3 min-w-[100px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 transition-all active:scale-95"
             >
               <MapPin size={16} />
               Map
@@ -70,7 +70,7 @@ export function ActiveSessionCard({ reservation }: { reservation: any }) {
             {!isReserved && (
               <button 
                 onClick={() => setShowExtendModal(true)}
-                className="flex items-center justify-center gap-2 px-4 py-3 min-w-[100px] rounded-xl bg-emerald-50 text-[#004D40] font-bold text-sm border border-emerald-100 hover:bg-emerald-100 hover:border-emerald-200 transition-all active:scale-95"
+                className="flex items-center justify-center gap-2 px-4 py-3 min-w-[100px] rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-[#004D40] dark:text-emerald-400 font-bold text-sm border border-emerald-100 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-200 transition-all active:scale-95"
               >
                 <Plus size={16} strokeWidth={3} />
                 Extend
