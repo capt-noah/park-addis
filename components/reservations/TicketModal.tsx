@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Clock, Banknote, X, Car, CreditCard, CheckCircle2, Timer, XCircle } from "lucide-react";
+import { Clock, Banknote, X, Car, CreditCard, CheckCircle2, Timer, XCircle, Wallet } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import Loader from "../Loader";
 
@@ -238,27 +238,32 @@ function UnpaidDetails({ reservation, onClose }: any) {
   
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<"chapa" | "wallet">("chapa")
 
   const handlePayNow = async () => {
     try {
       setIsLoading(true)
       setError(null)
       
-      const paymentResponse = await fetch(`/api/payment/create`, {
+      const endpoint = paymentMethod === "chapa" ? "/api/payment/create" : "/api/wallet/pay/reservation";
+      const body = paymentMethod === "chapa" 
+        ? { qrToken: reservation.qrToken }
+        : { reservationId: reservation.id, amount: totalDue };
+
+      const paymentResponse = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({qrToken: reservation.qrToken})
+        body: JSON.stringify(body)
       })
 
       if (!paymentResponse.ok) {
-        let errorMsg = "Payment initialization failed."
+        let errorMsg = "Payment failed."
         try {
           const errorData = await paymentResponse.json()
           errorMsg = errorData.error || errorMsg
         } catch (e) {
-          // If not JSON, it might be HTML or empty
           errorMsg = `Server error: ${paymentResponse.status}`
         }
         throw new Error(errorMsg)
@@ -266,10 +271,15 @@ function UnpaidDetails({ reservation, onClose }: any) {
 
       const payment = await paymentResponse.json()
 
-      if (payment.status === "success" && payment.data?.checkout_url) {
-        window.location.href = payment.data.checkout_url
+      if (paymentMethod === "chapa") {
+        if (payment.status === "success" && payment.data?.checkout_url) {
+          window.location.href = payment.data.checkout_url
+        } else {
+          throw new Error(payment.message || "Unable to initiate payment session.")
+        }
       } else {
-        throw new Error(payment.message || "Unable to initiate payment session.")
+        // Wallet Success
+        window.location.reload(); // Refresh to show PAID status
       }
     } catch (err: any) {
       console.error("Payment error:", err)
@@ -316,6 +326,35 @@ function UnpaidDetails({ reservation, onClose }: any) {
             </div>
           </div>
 
+          {/* Payment Method Selector */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider ml-1">Payment Method</p>
+            <div className="grid grid-cols-2 gap-2">
+               <button 
+                 onClick={() => setPaymentMethod("chapa")}
+                 className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all ${
+                   paymentMethod === "chapa" 
+                   ? "border-[#004D40] bg-[#004D40]/5 dark:border-emerald-500 dark:bg-emerald-500/5" 
+                   : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900"
+                 }`}
+               >
+                 <Banknote size={18} className={paymentMethod === "chapa" ? "text-[#004D40] dark:text-emerald-400" : "text-slate-400"} />
+                 <span className={`text-[10px] font-extrabold ${paymentMethod === "chapa" ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>Chapa</span>
+               </button>
+               <button 
+                 onClick={() => setPaymentMethod("wallet")}
+                 className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all ${
+                   paymentMethod === "wallet" 
+                   ? "border-[#004D40] bg-[#004D40]/5 dark:border-emerald-500 dark:bg-emerald-500/5" 
+                   : "border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900"
+                 }`}
+               >
+                 <Wallet size={18} className={paymentMethod === "wallet" ? "text-[#004D40] dark:text-emerald-400" : "text-slate-400"} />
+                 <span className={`text-[10px] font-extrabold ${paymentMethod === "wallet" ? "text-slate-900 dark:text-white" : "text-slate-400"}`}>Wallet</span>
+               </button>
+            </div>
+          </div>
+
           {/* Fee Breakdown */}
           <div className="bg-red-50/30 dark:bg-red-950/20 p-4 rounded-2xl border border-red-100/50 dark:border-red-900/20">
             <div className="space-y-2">
@@ -354,8 +393,8 @@ function UnpaidDetails({ reservation, onClose }: any) {
             <Loader size="md" color="bg-white/90" />
           ) : (
             <>
-              <Banknote size={20} className="group-hover:scale-110 transition-transform" />
-              <span>Pay Now</span>
+              {paymentMethod === "chapa" ? <Banknote size={20} /> : <Wallet size={20} />}
+              <span>Pay with {paymentMethod === "chapa" ? "Chapa" : "Wallet"}</span>
             </>
           )}
         </button>

@@ -91,6 +91,7 @@ export function TopUpModal({ isOpen, onClose, onConfirm, isProcessing = false }:
         {/* Payment Methods Section */}
         <div className="p-8 grid grid-cols-2 gap-4">
           <button 
+            type="button"
             onClick={() => setPaymentMethod("chapa")}
             className={`relative p-4 rounded-2xl border-2 transition-all group flex flex-col items-center justify-center gap-2 ${
               paymentMethod === "chapa" 
@@ -110,22 +111,14 @@ export function TopUpModal({ isOpen, onClose, onConfirm, isProcessing = false }:
           </button>
 
           <button 
-            onClick={() => setPaymentMethod("telebirr")}
-            className={`relative p-4 rounded-2xl border-2 transition-all group flex flex-col items-center justify-center gap-2 ${
-              paymentMethod === "telebirr" 
-              ? "border-primary bg-primary/5 shadow-md shadow-primary/5" 
-              : "border-border bg-muted/30 hover:border-border/80"
-            }`}
+            type="button"
+            disabled
+            className="relative p-4 rounded-2xl border-2 transition-all group flex flex-col items-center justify-center gap-2 border-border bg-muted/30 opacity-50 cursor-not-allowed"
           >
-            {paymentMethod === "telebirr" && (
-              <div className="absolute top-2 right-2 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-                <Check className="text-white w-2.5 h-2.5 stroke-[4px]" />
-              </div>
-            )}
-            <div className="h-8 flex items-center justify-center grayscale group-hover:grayscale-0 transition-all opacity-80 group-hover:opacity-100">
+            <div className="h-8 flex items-center justify-center grayscale">
                <span className="text-sm font-black text-[#00AEEF]">telebirr</span>
             </div>
-            <p className="text-[9px] font-bold text-muted-foreground">Popular Entry</p>
+            <p className="text-[9px] font-bold text-muted-foreground italic">Coming Soon</p>
           </button>
         </div>
 

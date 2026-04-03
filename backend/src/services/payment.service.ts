@@ -41,7 +41,8 @@ export async function createPayment(qrToken: string) {
                                  transactionId: tx_ref
                              })
     
-    const paymentSession = await initializeChapaPayment({amount, email: user.email, fullName: user.fullName, phone_number: user.phoneNumber, tx_ref})
+    const paymentCallback = "payment"
+    const paymentSession = await initializeChapaPayment({amount, email: user.email, fullName: user.fullName, phone_number: user.phoneNumber, tx_ref, paymentCallback})
     
     return paymentSession ?? null
 }
@@ -64,11 +65,12 @@ export async function failPayment(transactionId: string) {
                               })
                              .where(eq(payments.transactionId, transactionId))
                              .returning()
+                             .then(r => r[0])
                        
-    return response[0] ?? null
+    return response ?? null
 }
 
-export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string}) {
+export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref, paymentCallback}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string, paymentCallback: string}) {
 
     const first_name = fullName.split(" ")[0];
     const last_name = fullName.split(" ")[1];
@@ -83,7 +85,7 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
         last_name,
         phone_number: formattedPhone,
         tx_ref,
-        callback_url: `${process.env.BACKEND_URL}/api/payment/callback`,
+        callback_url: `${process.env.BACKEND_URL}/api/${paymentCallback}/callback`,
         return_url: `${process.env.VERCEL_URL}/reservations`,
         "customization[title]": "Park Addis Payment",
         "customization[description]": "Parking Reservation Payment"

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db";
 import { wallets } from "../schema/wallets";
 import { walletTransactions } from "../schema/walletTransactions";
@@ -66,28 +66,59 @@ export async function topUpWallet(userId: string, amount: string) {
                                     .returning()
                                     .then(r => r[0])
         
-        const fullName = user.fullName
-        const email = user.email
-        const phoneNumber = user.phoneNumber
-
         return {
-            fullName,
-            email,
-            phoneNumber,
+            fullName: user.fullName,
+            email: user.email,
+            phoneNumber: user.phoneNumber,
             tx_ref
         }
-        
-
     })
 
-        const chapaPayment = await initializeChapaPayment({ amount, email: response.email, fullName: response.fullName, phone_number: response.phoneNumber, tx_ref: response.tx_ref })
-        
-        if (chapaPayment.status !== 'success') throw new Error("Payment Failed")
-        
-        const validateTopUp = await confirmTopUp(response.tx_ref)
+    const paymentCallback = "wallet"
+    const chapaPayment = await initializeChapaPayment({ 
+        amount, 
+        email: response.email, 
+        fullName: response.fullName, 
+        phone_number: response.phoneNumber, 
+        tx_ref: response.tx_ref, 
+        paymentCallback 
+    })
+    
+    return chapaPayment ?? null
+}
 
-        return validateTopUp ?? null
-        // return validateTopUp.success? {validateTopUp, chapaPayment} : null
+export async function calculateBalanceFromHistory(walletId: string, tx?: any) {
+    const database = tx || db;
+    const [result] = await database.select({
+        total: sql<string>`SUM(
+            CASE 
+                WHEN type = 'TOPUP' THEN amount 
+                WHEN type = 'RESERVATION_PAYMENT' THEN -amount 
+                ELSE 0 
+            END
+        )`
+    })
+    .from(walletTransactions)
+    .where(
+        and(
+            eq(walletTransactions.walletId, walletId),
+            eq(walletTransactions.status, 'SUCCESS')
+        )
+    );
+
+    return parseFloat(result?.total || "0");
+}
+
+export async function syncWalletBalance(walletId: string, tx?: any) {
+    const database = tx || db;
+    const historicalBalance = await calculateBalanceFromHistory(walletId, database);
+
+    const [updatedWallet] = await database.update(wallets)
+            .set({ balance: historicalBalance.toString() })
+            .where(eq(wallets.id, walletId))
+            .returning();
+
+    return updatedWallet;
 }
 
 export async function confirmTopUp(tx_ref: string) {
@@ -96,80 +127,79 @@ export async function confirmTopUp(tx_ref: string) {
                              .where(eq(walletTransactions.referenceId, tx_ref))
                              .then(r => r[0])
 
-    if (!walletTx) throw new Error("Transaction not found" + walletTx);
-
+    if (!walletTx) throw new Error("Transaction not found");
+    if (walletTx.status === 'SUCCESS') return { success: true, alreadyProcessed: true };
     if (!walletTx.walletId) throw new Error("Wallet transaction does not have a walletId");
 
-    const wallet = await db.select()
-                           .from(wallets)
-                           .where(eq(wallets.id, walletTx.walletId))
-                           .then(r => r[0])
-                           
-    if (!wallet) throw new Error("Wallet not found");
-
-    const updatedWallet = await db.transaction(async (tx) => {
-
-        const current = new Decimal(wallet.balance);
-        const newBalance = current.plus(walletTx.amount).toString();
-
-        const response = await tx.update(wallets)
-                                      .set({ balance: newBalance })
-                                      .where(eq(wallets.id, wallet.id))
-                                      .returning()
-                                      .then(r => r[0])
+    const result = await db.transaction(async (tx) => {
+        const currentTx = await tx.select()
+                                  .from(walletTransactions)
+                                  .where(eq(walletTransactions.id, walletTx.id))
+                                  .then(r => r[0]);
+                                  
+        if (!currentTx || currentTx.status !== 'PENDING') return null;
 
         await tx.update(walletTransactions)
-                .set({ status: 'SUCCESS' })
+                .set({ status: 'SUCCESS', completedAt: new Date() })
                 .where(eq(walletTransactions.id, walletTx.id));
-                
-        return response
+
+        return await syncWalletBalance(walletTx.walletId!, tx);
     });
 
-    return { success: true, balance: updatedWallet.balance };
+    return result ? { success: true, balance: result.balance } : { success: false, error: "Already processed" };
+}
+
+export async function failTopUp(tx_ref: string) {
+    const response = await db.update(walletTransactions)
+                             .set({status: 'FAILED'})
+                             .where(and(
+                                 eq(walletTransactions.referenceId, tx_ref),
+                                 eq(walletTransactions.status, 'PENDING')
+                             ))
+                             .returning()
+                             .then(r => r[0])
+                             
+    return response ?? null
 }
 
 export async function payReservationFromWallet(userId: string, reservationId: string, amount: string) {
-
-    const wallet = await db.select()
-                           .from(wallets)
-                           .where(eq(wallets.userId, userId))
-                           .then(r => r[0])
-                           
+    const wallet = await getWallet(userId);
     if (!wallet) throw new Error("Wallet not found");
 
     if (new Decimal(wallet.balance).lt(amount)) throw new Error("Insufficient funds");
 
-    const negatedAmount = new Decimal(amount).negated().toString()
-
-    await db.transaction(async (tx) => {
-
+    return await db.transaction(async (tx) => {
         const tx_id = crypto.randomUUID();
+        
+        // 1. Record the transaction record first (Status: SUCCESS because it's wallet-to-wallet)
         const walletTx = await tx.insert(walletTransactions)
                                  .values({
                                     walletId: wallet.id,
-                                    amount: negatedAmount,
+                                    amount: new Decimal(amount).negated().toString(),
                                     type: 'RESERVATION_PAYMENT',
                                     status: 'SUCCESS',
-                                    referenceId: tx_id
+                                    referenceId: tx_id,
+                                    completedAt: new Date()
                                  })
                                  .returning()
                                  .then(r => r[0]);
 
-
-        const newBalance = new Decimal(wallet.balance).minus(amount).toString();
-
-        await tx.update(wallets)
-                .set({ balance: newBalance })
-                .where(eq(wallets.id, wallet.id));
-
-
+        // 2. Link the reservation payment
         await tx.insert(reservationPayments)
                 .values({
                     reservationId,
                     walletTransactionId: walletTx.id,
                     amount,
                 });
-    });
 
-    return { success: true, balance: new Decimal(wallet.balance).minus(amount).toString() };
+        // 3. Reconstruct the balance from history
+        const updatedWallet = await syncWalletBalance(wallet.id, tx);
+
+        // 4. Double-check that the operation didn't push the user into negative balance (Race condition check)
+        if (new Decimal(updatedWallet.balance).isNegative()) {
+            throw new Error("Insufficient balance (concurrent transaction prevented)");
+        }
+
+        return { success: true, balance: updatedWallet.balance };
+    });
 }

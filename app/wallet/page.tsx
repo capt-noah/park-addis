@@ -119,6 +119,14 @@ export default function WalletPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        
+        // Handle Chapa Redirect
+        if (data.status === "success" && data.data?.checkout_url) {
+          window.location.href = data.data.checkout_url;
+          return;
+        }
+
         setIsModalOpen(false);
         // Refresh local data for transactions
         if (walletId) fetchTransactionsOnly(walletId);

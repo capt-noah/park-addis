@@ -40,7 +40,7 @@ paymentRouter.post('/callback', async (req, res) => {
 
     if(!validChapa) return res.status(401).json({error: "Invalid Payment"})
 
-    if (validChapa.status === "success") {
+    if (validChapa.data && validChapa.data.status === "success") {
         const paymentResponse = await completePayment(tx_ref)
 
         if(!paymentResponse) return res.status(401).json({error: "Unable To Complete Payment"})

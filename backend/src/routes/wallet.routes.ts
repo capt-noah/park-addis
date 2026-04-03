@@ -1,6 +1,7 @@
 import express from "express"
-import { createWallet, getWallet, getWalletTransactions, payReservationFromWallet, topUpWallet } from "../services/wallet.service"
+import { confirmTopUp, createWallet, failTopUp, getWallet, getWalletTransactions, payReservationFromWallet, topUpWallet } from "../services/wallet.service"
 import { authMiddleware } from "../middleware/auth.middleware"
+import { verifyChapaPayment } from "../services/payment.service"
 
 const walletRouter = express.Router()
 
@@ -41,6 +42,25 @@ walletRouter.post('/topup', authMiddleware, async (req, res) => {
     const topupRes = await topUpWallet(userId, amount)
     if (!topupRes) return res.status(403).json({ error: "Unable To TopUp" })
     return res.status(200).json(topupRes)
+})
+
+walletRouter.post('/callback', async (req, res) => {
+        const { tx_ref } = req.body
+    
+        const validChapa = await verifyChapaPayment(tx_ref)
+    
+        if(!validChapa) return res.status(401).json({error: "Invalid Payment"})
+    
+        if (validChapa.data && validChapa.data.status === "success") {
+            const topupResponse = await confirmTopUp(tx_ref)
+    
+            if(!topupResponse) return res.status(401).json({error: "Unable To Complete TopUp"})
+    
+            return res.status(200).send("OK")
+        }
+    
+        await failTopUp(tx_ref)
+        return res.status(400).json({error: "Payment Failed"})
 })
 
 walletRouter.post('/pay/reservation', authMiddleware, async (req, res) => {
