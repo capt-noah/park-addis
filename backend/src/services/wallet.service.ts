@@ -94,7 +94,8 @@ export async function calculateBalanceFromHistory(walletId: string, tx?: any) {
         total: sql<string>`SUM(
             CASE 
                 WHEN type = 'TOPUP' THEN amount 
-                WHEN type = 'RESERVATION_PAYMENT' THEN -amount 
+                WHEN type = 'RESERVATION_CHARGE' THEN -amount 
+                WHEN type = 'RESERVATION_HOLD' THEN -amount 
                 ELSE 0 
             END
         )`
@@ -178,7 +179,7 @@ export async function payReservationFromWallet(userId: string, reservationId: st
                                  .values({
                                     walletId: wallet.id,
                                     amount: new Decimal(amount).toString(),
-                                    type: 'RESERVATION_PAYMENT',
+                                    type: 'RESERVATION_CHARGE',
                                     status: 'SUCCESS',
                                     referenceId: tx_id,
                                     completedAt: new Date()

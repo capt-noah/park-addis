@@ -232,8 +232,8 @@ function UnpaidDetails({ reservation, onClose }: any) {
   const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
   const baseRate    = parseFloat(reservation.pricePerHour || "0");
   const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
-  const resFee      = 0.00;
-  const svcFee      = 0.00;
+  const resFee      = 1.00;
+  const svcFee      = 1.00;
   const totalDue = (parkingFee + resFee + svcFee).toFixed(2);
   
   const [isLoading, setIsLoading] = useState(false)
@@ -361,8 +361,8 @@ function UnpaidDetails({ reservation, onClose }: any) {
           </div>
 
           {/* Fee Breakdown */}
-          <div className="bg-red-50/30 dark:bg-red-950/20 p-4 rounded-2xl border border-red-100/50 dark:border-red-900/20">
-            <div className="space-y-2">
+          <div className="bg-red-50/30 dark:bg-red-950/20 p-3 rounded-2xl border border-red-100/50 dark:border-red-900/20">
+            <div className="space-y-1.5">
               <div className="flex justify-between items-baseline">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60 dark:text-red-400/60">Parking ({durationDisplay})</span>
                 <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {parkingFee.toFixed(2)}</span>
@@ -371,13 +371,13 @@ function UnpaidDetails({ reservation, onClose }: any) {
                 <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60 dark:text-red-400/60">Reservation Fee</span>
                 <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {resFee.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center pb-2 border-b border-red-100/30 dark:border-red-900/20">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60 dark:text-red-400/60">Service Fee</span>
+              <div className="flex justify-between items-center pb-1.5 border-b border-red-100/30 dark:border-red-900/20">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/60 dark:text-red-400/60">Service Charge</span>
                 <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {svcFee.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center pt-1">
+              <div className="flex justify-between items-center pt-0.5">
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-red-600 dark:text-red-400">Total Due</span>
-                <span className="text-xl font-extrabold text-red-600 dark:text-red-400">ETB {totalDue}</span>
+                <span className="text-lg font-extrabold text-red-600 dark:text-red-400">ETB {totalDue}</span>
               </div>
             </div>
           </div>
@@ -424,8 +424,8 @@ function PaidDetails({ reservation, onClose }: any) {
   const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
   const baseRate    = parseFloat(reservation.pricePerHour || "0");
   const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
-  const resFee      = 0.00;
-  const svcFee      = 0.00;
+  const resFee      = 1.00;
+  const svcFee      = 1.00;
   const totalPaid   = (parkingFee + resFee + svcFee).toFixed(2);
 
   return (
@@ -468,22 +468,24 @@ function PaidDetails({ reservation, onClose }: any) {
             </div>
           </div>
           {/* Mini receipt summary */}
-          <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
-            <div className="flex justify-between items-baseline mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Parking ({durationDisplay})</span>
-              <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {parkingFee.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Reservation Fee</span>
-              <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {resFee.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center pb-2 border-b border-emerald-100/50 dark:border-emerald-900/20">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Service Fee</span>
-              <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {svcFee.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between items-center pt-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#004D40] dark:text-emerald-500">Total Paid</span>
-              <span className="text-xl font-extrabold text-slate-900 dark:text-white">ETB {totalPaid}</span>
+          <div className="bg-emerald-50/50 dark:bg-emerald-950/20 p-3 rounded-2xl border border-emerald-100 dark:border-emerald-900/30">
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Parking ({durationDisplay})</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {parkingFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Reservation Fee</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {resFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pb-1.5 border-b border-emerald-100/50 dark:border-emerald-900/20">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Service Charge</span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {svcFee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-0.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#004D40] dark:text-emerald-500">Total Paid</span>
+                <span className="text-xl font-extrabold text-slate-900 dark:text-white">ETB {totalPaid}</span>
+              </div>
             </div>
           </div>
         </div>
