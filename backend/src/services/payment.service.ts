@@ -7,8 +7,6 @@ import { reservations } from "../schema/reservations"
 import crypto from "crypto"
 import { users } from "../schema/users"
 
-import chapa from "../chapa"
-
 
 export async function createPayment(qrToken: string) {
 
@@ -94,7 +92,7 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
     console.log("Initializing Chapa with fetch:", JSON.stringify(body, null, 2));
 
     try {
-        const response = await fetch('https://api.chapa.co/v1/transaction/initialize', {
+        const response = await fetch(`${process.env.CHAPA_URL}/initialize`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${process.env.CHAPA_SECRET_KEY}`,
@@ -118,9 +116,19 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
 }
 
 export async function verifyChapaPayment(tx_ref: string) {
-    const response = await chapa.verify({
-        tx_ref
+    const response = await fetch(`${process.env.CHAPA_URL}/verify/${tx_ref}`, {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${process.env.CHAPA_SECRET_KEY}`
+        }
     })
 
-    return response ?? null
+    const data = (await response.json()) as any;
+
+    if (!response.ok || data.status !== 'success') {
+        console.error("Chapa Fetch Error:", data);
+        throw new Error(data.message || JSON.stringify(data));
+    }
+
+    return data ?? null
 }

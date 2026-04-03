@@ -66,21 +66,25 @@ export async function topUpWallet(userId: string, amount: string) {
                                     .returning()
                                     .then(r => r[0])
         
+        const fullName = user.fullName
         const email = user.email
+        const phoneNumber = user.phoneNumber
 
         return {
+            fullName,
             email,
-            walletTrRes
+            phoneNumber,
+            tx_ref
         }
         
 
     })
 
-        // const chapaPayment = await initializeChapaPayment({ amount, email, tx_ref })
+        const chapaPayment = await initializeChapaPayment({ amount, email: response.email, fullName: response.fullName, phone_number: response.phoneNumber, tx_ref: response.tx_ref })
         
-        // if (chapaPayment.status !== 'SUCCESS') throw new Error("Payment Failed")
+        if (chapaPayment.status !== 'success') throw new Error("Payment Failed")
         
-        const validateTopUp = await confirmTopUp(response.walletTrRes.referenceId)
+        const validateTopUp = await confirmTopUp(response.tx_ref)
 
         return validateTopUp ?? null
         // return validateTopUp.success? {validateTopUp, chapaPayment} : null
