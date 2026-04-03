@@ -37,16 +37,27 @@ walletRouter.post('/transaction', async (req, res) => {
 
 // 3. Session-based topup
 walletRouter.post('/topup', authMiddleware, async (req, res) => {
-    const { amount } = req.body
-    const userId = res.locals.user.id
-    const topupRes = await topUpWallet(userId, amount)
-    if (!topupRes) return res.status(403).json({ error: "Unable To TopUp" })
-    return res.status(200).json(topupRes)
+    try {
+        const { amount } = req.body
+        const userId = res.locals.user.id
+        const topupRes = await topUpWallet(userId, amount)
+        if (!topupRes) return res.status(403).json({ error: "Unable To TopUp" })
+        return res.status(200).json(topupRes)
+    } catch (error: any) {
+        return res.status(500).json({ error: error.message || "Top-up failed" })
+    }
 })
 
-walletRouter.post('/callback', async (req, res) => {
-        const { tx_ref } = req.body
-    
+walletRouter.all('/callback', async (req, res) => {
+    try {
+        const tx_ref = req.body.tx_ref || req.query.tx_ref || req.body.trx_ref || req.query.trx_ref;
+        
+        console.log(`Wallet Callback received: ${tx_ref}`, { body: req.body, query: req.query });
+
+        if (!tx_ref) {
+            return res.status(400).json({ error: "Missing transaction reference" });
+        }
+
         const validChapa = await verifyChapaPayment(tx_ref)
     
         if(!validChapa) return res.status(401).json({error: "Invalid Payment"})
@@ -61,14 +72,23 @@ walletRouter.post('/callback', async (req, res) => {
     
         await failTopUp(tx_ref)
         return res.status(400).json({error: "Payment Failed"})
+    } catch (error: any) {
+        console.error("Wallet Callback Error:", error.message);
+        return res.status(500).json({ error: error.message });
+    }
 })
 
 walletRouter.post('/pay/reservation', authMiddleware, async (req, res) => {
-    const { reservationId, amount } = req.body
-    const userId = res.locals.user.id
-    const payRes = await payReservationFromWallet(userId, reservationId, amount)
-    if (!payRes) return res.status(403).json({ error: "Unable To Pay For Reservation" })
-    return res.status(200).json(payRes)
+    try {
+        const { reservationId, amount } = req.body
+        const userId = res.locals.user.id
+        const payRes = await payReservationFromWallet(userId, reservationId, amount)
+        if (!payRes) return res.status(403).json({ error: "Unable To Pay For Reservation" })
+        return res.status(200).json(payRes)
+    } catch (error: any) {
+        console.error("Pay Reservation Error:", error.message);
+        return res.status(400).json({ error: error.message || "Payment from wallet failed" })
+    }
 })
 
 export default walletRouter

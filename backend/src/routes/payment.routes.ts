@@ -33,23 +33,34 @@ paymentRouter.post('/create', async (req, res) => {
 })
 
 // Original callback (redirect/simple verify)
-paymentRouter.post('/callback', async (req, res) => {
-    const { tx_ref } = req.body
+paymentRouter.all('/callback', async (req, res) => {
+    try {
+        const tx_ref = req.body.tx_ref || req.query.tx_ref || req.body.trx_ref || req.query.trx_ref;
 
-    const validChapa = await verifyChapaPayment(tx_ref)
+        console.log(`Payment Callback received: ${tx_ref}`, { body: req.body, query: req.query });
 
-    if(!validChapa) return res.status(401).json({error: "Invalid Payment"})
+        if (!tx_ref) {
+            return res.status(400).json({ error: "Missing transaction reference" });
+        }
 
-    if (validChapa.data && validChapa.data.status === "success") {
-        const paymentResponse = await completePayment(tx_ref)
+        const validChapa = await verifyChapaPayment(tx_ref)
 
-        if(!paymentResponse) return res.status(401).json({error: "Unable To Complete Payment"})
+        if(!validChapa) return res.status(401).json({error: "Invalid Payment"})
 
-        return res.status(200).send("OK")
+        if (validChapa.data && validChapa.data.status === "success") {
+            const paymentResponse = await completePayment(tx_ref)
+
+            if(!paymentResponse) return res.status(401).json({error: "Unable To Complete Payment"})
+
+            return res.status(200).send("OK")
+        }
+
+        await failPayment(tx_ref)
+        return res.status(400).json({error: "Payment Failed"})
+    } catch (error: any) {
+        console.error("Payment Callback Error:", error.message);
+        return res.status(500).json({ error: error.message });
     }
-
-    await failPayment(tx_ref)
-    return res.status(400).json({error: "Payment Failed"})
 })
 
 /**

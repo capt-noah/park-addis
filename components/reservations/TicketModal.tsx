@@ -232,8 +232,8 @@ function UnpaidDetails({ reservation, onClose }: any) {
   const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
   const baseRate    = parseFloat(reservation.pricePerHour || "0");
   const parkingFee  = parseFloat((durationHrs * baseRate).toFixed(2));
-  const resFee      = 5.00;
-  const svcFee      = 2.50;
+  const resFee      = 0.50;
+  const svcFee      = 0.50;
   const totalDue = (parkingFee + resFee + svcFee).toFixed(2);
   
   const [isLoading, setIsLoading] = useState(false)
