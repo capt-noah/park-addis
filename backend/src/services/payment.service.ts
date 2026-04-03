@@ -71,23 +71,11 @@ export async function failPayment(transactionId: string) {
 }
 
 export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string}) {
+
+    const first_name = fullName.split(" ")[0];
+    const last_name = fullName.split(" ")[1];
     
-    // 1. Defensive splitting for fullName
-    const nameParts = (fullName || "User").trim().split(/\s+/);
-    const first_name = nameParts[0] || "User";
-    const last_name = nameParts.slice(1).join(" ") || "Customer";
-    
-    // 2. Strict 10-digit phone number format (09xxxxxxxx or 07xxxxxxxx)
-    let formattedPhone = (phone_number || "").replace(/\D/g, ""); 
-    if (formattedPhone.startsWith("251")) {
-        formattedPhone = "0" + formattedPhone.slice(3);
-    } else if (!formattedPhone.startsWith("0") && formattedPhone.length === 9) {
-        formattedPhone = "0" + formattedPhone;
-    }
-    
-    if (formattedPhone.length !== 10) {
-        formattedPhone = phone_number; 
-    }
+    const formattedPhone = "0" + phone_number
 
     const body = {
         amount,
@@ -98,7 +86,7 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
         phone_number: formattedPhone,
         tx_ref,
         callback_url: `${process.env.BACKEND_URL}/api/payment/callback`,
-        return_url: `https://${(process.env.VERCEL_URL || 'park-addis.vercel.app').replace('https://', '')}/reservations`,
+        return_url: `${process.env.VERCEL_URL}/reservations`,
         "customization[title]": "Park Addis Payment",
         "customization[description]": "Parking Reservation Payment"
     };
