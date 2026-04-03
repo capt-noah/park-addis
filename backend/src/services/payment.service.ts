@@ -72,44 +72,55 @@ export async function failPayment(transactionId: string) {
 
 export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string}) {
     
-    // Defensive splitting for fullName
+    // 1. Defensive splitting for fullName
     const nameParts = (fullName || "User").trim().split(/\s+/);
     const first_name = nameParts[0] || "User";
     const last_name = nameParts.slice(1).join(" ") || "Customer";
     
-    // Ensure phone number format
-    let formattedPhone = phone_number;
-    if (formattedPhone && !formattedPhone.startsWith('0') && !formattedPhone.startsWith('+251')) {
-        formattedPhone = '0' + formattedPhone;
+    // 2. Strict 10-digit phone number format (09xxxxxxxx or 07xxxxxxxx)
+    // Chapa is very strict about this. We strip prefixes and ensure it starts with 0.
+    let formattedPhone = (phone_number || "").replace(/\D/g, ""); // Remove non-digits
+    if (formattedPhone.startsWith("251")) {
+        formattedPhone = "0" + formattedPhone.slice(3);
+    } else if (!formattedPhone.startsWith("0") && formattedPhone.length === 9) {
+        formattedPhone = "0" + formattedPhone;
+    }
+    
+    // Fallback if formatting fails or is empty
+    if (formattedPhone.length !== 10) {
+        console.warn(`Invalid phone format detected: ${phone_number}. Sending as is.`);
+        formattedPhone = phone_number; 
     }
 
+    const payload = {
+        first_name,
+        last_name,
+        phone_number: formattedPhone,
+        amount,
+        currency: "ETB",
+        email,
+        tx_ref,
+        callback_url: `${process.env.BACKEND_URL}/api/payment/callback`,
+        // MANDATORY: Must include https:// protocol
+        return_url: `https://${(process.env.VERCEL_URL || 'park-addis.vercel.app').replace('https://', '')}/reservations`,
+        customization: {
+            title: "Park Addis Payment",
+            description: "Parking Reservation Payment"
+        }
+    };
+
+    console.log("Initializing Chapa with payload:", JSON.stringify(payload, null, 2));
+
     try {
-        const response = await chapa.initialize({
-            first_name,
-            last_name,
-            phone_number: formattedPhone,
-            amount,
-            currency: "ETB",
-            email,
-            tx_ref,
-            // Callback: Where Chapa sends the status (our backend)
-            callback_url: `${process.env.BACKEND_URL}/api/payment/callback`,
-            // Return: Where the user is redirected (our frontend)
-            return_url: `${process.env.VERCEL_URL}/reservations`,
-            customization: {
-                title: "Park Addis Payment",
-                description: "Parking Reservation Payment"
-            }
-        });
+        const response = await chapa.initialize(payload);
         return response;
     } catch (error: any) {
-        // Log the detailed error object to the console
         const errorData = error?.response?.data || error.message;
-        console.error("Chapa Initialization Error:", errorData);
+        console.error("Chapa Initialization Detailed Error:", JSON.stringify(errorData, null, 2));
         
-        // Stringify the error if it is an object to avoid [object Object] in the message
-        const errorMessage = typeof errorData === 'object' ? JSON.stringify(errorData) : errorData;
-        throw new Error(`Chapa Initialization Failed: ${errorMessage}`);
+        // Ensure the error message is a string to avoid [object Object]
+        const errorMessage = typeof errorData === 'object' ? JSON.stringify(errorData) : String(errorData);
+        throw new Error(`Chapa API Error: ${errorMessage}`);
     }
 }
 
