@@ -10,7 +10,7 @@ import walletRouter from "./routes/wallet.routes";
 import vehicleRouter from "./routes/vehicle.routes";
 
 app.use(cors({
-  origin: ["http://localhost:3000", "https://park-addis.vercel.app"],
+  origin: ["http://localhost:3000", "https://park-addis.vercel.app:1000"],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"]
 }))
