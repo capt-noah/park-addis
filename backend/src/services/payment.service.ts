@@ -95,7 +95,7 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
             // Callback: Where Chapa sends the status (our backend)
             callback_url: `${process.env.BACKEND_URL}/api/payment/callback`,
             // Return: Where the user is redirected (our frontend)
-            return_url: `${process.env.VERCEL_URL || 'https://park-addis.vercel.app'}/reservations`,
+            return_url: `${process.env.VERCEL_URL}/reservations`,
             customization: {
                 title: "Park Addis Payment",
                 description: "Parking Reservation Payment"
@@ -103,8 +103,13 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
         });
         return response;
     } catch (error: any) {
-        console.error("Chapa Initialization Error:", error?.response?.data || error.message);
-        throw new Error(`Chapa Initialization Failed: ${error?.response?.data?.message || error.message}`);
+        // Log the detailed error object to the console
+        const errorData = error?.response?.data || error.message;
+        console.error("Chapa Initialization Error:", errorData);
+        
+        // Stringify the error if it is an object to avoid [object Object] in the message
+        const errorMessage = typeof errorData === 'object' ? JSON.stringify(errorData) : errorData;
+        throw new Error(`Chapa Initialization Failed: ${errorMessage}`);
     }
 }
 
