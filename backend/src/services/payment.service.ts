@@ -72,30 +72,40 @@ export async function failPayment(transactionId: string) {
 
 export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string}) {
     
-    const first_name = fullName.split(' ')[0]
-    const last_name = fullName.split(' ')[1]
-    phone_number = 0 + phone_number
+    // Defensive splitting for fullName
+    const nameParts = (fullName || "User").trim().split(/\s+/);
+    const first_name = nameParts[0] || "User";
+    const last_name = nameParts.slice(1).join(" ") || "Customer";
+    
+    // Ensure phone number format
+    let formattedPhone = phone_number;
+    if (formattedPhone && !formattedPhone.startsWith('0') && !formattedPhone.startsWith('+251')) {
+        formattedPhone = '0' + formattedPhone;
+    }
 
-    const response = chapa.initialize({
-        first_name,
-        last_name,
-        phone_number,
-        amount,
-        currency: "ETB",
-        email,
-        tx_ref,
-        callback_url: `${process.env.BACKEND_URL}/api/payment/callback`,
-        return_url: `${process.env.BACKEND_URL}/reservations`,
-        customization: {
-            title: "Park Addis Payment",
-            description: "Parking Reservation Payment"
-        }
-
-    })
-
-    const data = await response
-
-    return data
+    try {
+        const response = await chapa.initialize({
+            first_name,
+            last_name,
+            phone_number: formattedPhone,
+            amount,
+            currency: "ETB",
+            email,
+            tx_ref,
+            // Callback: Where Chapa sends the status (our backend)
+            callback_url: `${process.env.BACKEND_URL}/api/payment/callback`,
+            // Return: Where the user is redirected (our frontend)
+            return_url: `${process.env.VERCEL_URL || 'https://park-addis.vercel.app'}/reservations`,
+            customization: {
+                title: "Park Addis Payment",
+                description: "Parking Reservation Payment"
+            }
+        });
+        return response;
+    } catch (error: any) {
+        console.error("Chapa Initialization Error:", error?.response?.data || error.message);
+        throw new Error(`Chapa Initialization Failed: ${error?.response?.data?.message || error.message}`);
+    }
 }
 
 export async function verifyChapaPayment(tx_ref: string) {
