@@ -78,49 +78,54 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
     const last_name = nameParts.slice(1).join(" ") || "Customer";
     
     // 2. Strict 10-digit phone number format (09xxxxxxxx or 07xxxxxxxx)
-    // Chapa is very strict about this. We strip prefixes and ensure it starts with 0.
-    let formattedPhone = (phone_number || "").replace(/\D/g, ""); // Remove non-digits
+    let formattedPhone = (phone_number || "").replace(/\D/g, ""); 
     if (formattedPhone.startsWith("251")) {
         formattedPhone = "0" + formattedPhone.slice(3);
     } else if (!formattedPhone.startsWith("0") && formattedPhone.length === 9) {
         formattedPhone = "0" + formattedPhone;
     }
     
-    // Fallback if formatting fails or is empty
     if (formattedPhone.length !== 10) {
-        console.warn(`Invalid phone format detected: ${phone_number}. Sending as is.`);
         formattedPhone = phone_number; 
     }
 
-    const payload = {
-        first_name,
-        last_name,
-        phone_number: formattedPhone,
+    const body = {
         amount,
         currency: "ETB",
         email,
+        first_name,
+        last_name,
+        phone_number: formattedPhone,
         tx_ref,
         callback_url: `${process.env.BACKEND_URL}/api/payment/callback`,
-        // MANDATORY: Must include https:// protocol
         return_url: `https://${(process.env.VERCEL_URL || 'park-addis.vercel.app').replace('https://', '')}/reservations`,
-        customization: {
-            title: "Park Addis Payment",
-            description: "Parking Reservation Payment"
-        }
+        "customization[title]": "Park Addis Payment",
+        "customization[description]": "Parking Reservation Payment"
     };
 
-    console.log("Initializing Chapa with payload:", JSON.stringify(payload, null, 2));
+    console.log("Initializing Chapa with fetch:", JSON.stringify(body, null, 2));
 
     try {
-        const response = await chapa.initialize(payload);
-        return response;
+        const response = await fetch('https://api.chapa.co/v1/transaction/initialize', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${process.env.CHAPA_SECRET_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = (await response.json()) as any;
+
+        if (!response.ok || data.status !== 'success') {
+            console.error("Chapa Fetch Error:", data);
+            throw new Error(data.message || JSON.stringify(data));
+        }
+
+        return data; // Returns { status, message, data: { checkout_url } }
     } catch (error: any) {
-        const errorData = error?.response?.data || error.message;
-        console.error("Chapa Initialization Detailed Error:", JSON.stringify(errorData, null, 2));
-        
-        // Ensure the error message is a string to avoid [object Object]
-        const errorMessage = typeof errorData === 'object' ? JSON.stringify(errorData) : String(errorData);
-        throw new Error(`Chapa API Error: ${errorMessage}`);
+        console.error("Payment Initialization Error:", error.message);
+        throw new Error(`Payment Initialization Failed: ${error.message}`);
     }
 }
 
