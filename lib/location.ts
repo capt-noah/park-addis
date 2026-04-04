@@ -1,6 +1,6 @@
 export const DEFAULT_LAT = 9.03584;
 export const DEFAULT_LNG = 38.75242;
-export const DEFAULT_RANGE = 10000;
+export const DEFAULT_RANGE = 1000;
 
 interface Coords {
   lng: number;

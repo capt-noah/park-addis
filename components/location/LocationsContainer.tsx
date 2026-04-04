@@ -88,7 +88,7 @@ export default function LocationsContainer({
 
     try {
       const res = await fetch(
-        `/api/locations?distance=${filter === "All" ? 10000 : filter}&lat=${lat}&lng=${lng}`,
+        `/api/locations?distance=${filter === "All" ? 1000 : filter}&lat=${lat}&lng=${lng}`,
       );
 
       if (res.ok) {
@@ -198,7 +198,7 @@ export default function LocationsContainer({
           {/* Filter Pills */}
           <div className="w-full h-[40px]">
             <div className="flex gap-2 pointer-events-auto overflow-x-auto max-w-lg w-full no-scrollbar pb-3">
-              {["All", 1000, 600, 400, 200].map((filter) => (
+              {["All", 600, 400, 200].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => handleFilterClick(filter as any)}
@@ -209,7 +209,7 @@ export default function LocationsContainer({
                       : "bg-card/90 border-border/50 text-foreground hover:border-primary/50 hover:bg-card"
                   } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {filter === "All" ? "All" : filter === 1000 ? "1km" : `${filter}m`}
+                  {filter === "All" ? "All (1km)" : `${filter}m`}
                 </button>
               ))}
             </div>
