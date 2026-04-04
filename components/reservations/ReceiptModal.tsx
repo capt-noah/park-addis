@@ -24,8 +24,8 @@ export function ReceiptModal({ reservation, onClose }: { reservation: any; onClo
   const durationDisplay = `${Math.floor(durationHrs)}h ${Math.round((durationHrs % 1) * 60)}m`;
   const baseFeePerHour = parseFloat(reservation.pricePerHour || "0");
   const parkingFee     = parseFloat((durationHrs * baseFeePerHour).toFixed(2));
-  const reservationFee = 5.00;
-  const serviceFee     = 2.5;
+  const reservationFee = 0.00;
+  const serviceFee     = 0.00;
   const totalFee       = (parkingFee + reservationFee + serviceFee).toFixed(2);
 
   return (
