@@ -31,7 +31,7 @@ export default function LocationsContainer({
   const { coords: mapLocation, navigation, actions } = useMap();
   const [displayedLocations, setDisplayedLocations] = useState<
     ParkingFeatures[]
-  >(locationsData?.features || []);
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const initialAutoLoad = useRef(false);
 

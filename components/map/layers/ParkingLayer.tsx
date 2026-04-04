@@ -82,7 +82,7 @@ export default function ParkingLayer({ locations, onLocationClick }: any) {
             markersRef.current.forEach(marker => marker.remove())
             markersRef.current = []
         }
-    }, [map, locations, activeReservation, navigation.status, navigation.destination])
+    }, [map, locations, activeReservation, navigation.status, navigation.destination, sessionLoading])
 
     return null
 }
