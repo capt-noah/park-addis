@@ -34,7 +34,7 @@ export function ReceiptModal({ reservation, onClose }: { reservation: any; onClo
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 bg-slate-100/80 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full transition-colors z-20"
+          className="absolute top-5 right-5 p-2 bg-slate-100/80 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full transition-colors z-50"
         >
           <X size={16} strokeWidth={3} />
         </button>
