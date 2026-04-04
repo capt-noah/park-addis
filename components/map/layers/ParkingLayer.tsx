@@ -16,7 +16,7 @@ export default function ParkingLayer({ locations, onLocationClick }: any) {
     }, [onLocationClick])
 
     useEffect(() => {
-        if (!map || sessionLoading) return
+        if (!map) return
 
         // Clear existing markers
         markersRef.current.forEach(marker => marker.remove())
