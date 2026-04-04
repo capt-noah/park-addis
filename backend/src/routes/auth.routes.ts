@@ -1,5 +1,5 @@
 import express from "express";
-import { registerAndSetupUser, validateUser, createSession } from "../services/auth.service";
+import { registerAndSetupUser, validateUser, createSession, deleteSession } from "../services/auth.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 
 const authRouter = express.Router();
@@ -67,7 +67,17 @@ authRouter.get("/me", authMiddleware, async (req, res) => {
   });
 });
 
-authRouter.get("/logout", (req, res) => {
+authRouter.get("/logout", async (req, res) => {
+  let sessionId = req.cookies?.sessionId;
+  if (!sessionId && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith("Bearer ")) sessionId = authHeader.substring(7);
+  }
+
+  if (sessionId) {
+    await deleteSession(sessionId);
+  }
+
   res.clearCookie("sessionId", {
     httpOnly: true,
     sameSite: "lax",
