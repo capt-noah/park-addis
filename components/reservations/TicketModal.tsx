@@ -48,10 +48,10 @@ export function TicketModal({ reservation, onClose }: { reservation: any; onClos
 
           {/* QR Code */}
           <div className="z-10">
-            <div className="bg-slate-50 dark:bg-white p-4 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-inner">
+            <div className="bg-slate-50 dark:bg-white p-3 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-inner">
               <QRCodeSVG
                 value={reservation.qrToken || "park-addis"}
-                size={120}
+                size={100}
                 level="L"
                 includeMargin={false}
                 fgColor="#004D40"
@@ -296,15 +296,17 @@ function UnpaidDetails({ reservation, onClose }: any) {
 
   return (
     <>
-      <div className="px-8 py-4 space-y-3 flex-1 relative overflow-hidden">
-        {/* UNPAID watermark layer to prevent horizontal scroll */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0">
-          <span className="text-red-500/10 font-black text-5xl uppercase tracking-[0.3em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
-            UNPAID
-          </span>
-        </div>
-        
-        <div className="relative z-10 space-y-3">
+      {/* SCROLLABLE BODY */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+        <div className="px-8 pt-4 pb-12 space-y-3 relative">
+          {/* UNPAID watermark layer to prevent horizontal scroll */}
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-0 overflow-hidden">
+            <span className="text-red-500/10 font-black text-5xl uppercase tracking-[0.3em] -rotate-[35deg] select-none scale-125 whitespace-nowrap">
+              UNPAID
+            </span>
+          </div>
+          
+          <div className="relative z-10 space-y-3">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Date</p>
@@ -381,9 +383,12 @@ function UnpaidDetails({ reservation, onClose }: any) {
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
-      <div className="px-8 pb-8 pt-0">
+
+      {/* FIXED FOOTER */}
+      <div className="px-8 pb-8 pt-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 relative z-20">
         {error && (
           <p className="text-[10px] text-red-500 font-bold text-center mb-3 animate-shake">
             {error}
@@ -392,7 +397,7 @@ function UnpaidDetails({ reservation, onClose }: any) {
         <button 
           onClick={handlePayNow} 
           disabled={isLoading}
-          className="w-full h-[52px] bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-80 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
+          className="w-full h-[50px] bg-[#004D40] hover:bg-[#004D40]/90 disabled:opacity-80 disabled:cursor-not-allowed text-white font-bold rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]"
         >
           {isLoading ? (
             <Loader size="md" color="bg-white/90" />

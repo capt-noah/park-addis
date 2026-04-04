@@ -39,8 +39,8 @@ export function ReceiptModal({ reservation, onClose }: { reservation: any; onClo
           <X size={16} strokeWidth={3} />
         </button>
 
-        {/* Top Section: Branding & Receipt Summary */}
-        <div className="pt-8 pb-6 px-8 flex flex-col items-center border-b border-dashed border-slate-200 dark:border-slate-800/80 relative">
+        {/* Top Section: Branding & Receipt Summary - FIXED HEADER */}
+        <div className="pt-8 pb-6 px-8 flex flex-col items-center border-b border-dashed border-slate-200 dark:border-slate-800/80 relative bg-white dark:bg-slate-900 z-20">
           {/* Side Notches */}
           <div className="absolute -bottom-3 -left-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
           <div className="absolute -bottom-3 -right-3 w-6 h-6 bg-slate-900/40 rounded-full z-10" />
@@ -60,98 +60,101 @@ export function ReceiptModal({ reservation, onClose }: { reservation: any; onClo
           </h2>
         </div>
 
-        {/* Details Section */}
-        <div className="px-8 py-5 space-y-3 flex-1 relative overflow-hidden">
-          <div className="relative z-10 space-y-3">
-            {/* PAID Watermark — diagonal at top */}
-            <div className="absolute top-2 left-0 right-0 pointer-events-none flex items-center justify-center z-0 overflow-hidden h-24">
-              <span className="text-emerald-500/[0.13] font-black text-7xl uppercase tracking-[0.25em] select-none whitespace-nowrap -rotate-[25deg]">
-                PAID
-              </span>
-            </div>
+        {/* SCROLLABLE BODY */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+          {/* Details Section */}
+          <div className="px-8 py-5 space-y-3 relative overflow-hidden">
+            <div className="relative z-10 space-y-3">
+              {/* PAID Watermark — diagonal at top */}
+              <div className="absolute top-2 left-0 right-0 pointer-events-none flex items-center justify-center z-0 overflow-hidden h-24">
+                <span className="text-emerald-500/[0.13] font-black text-7xl uppercase tracking-[0.25em] select-none whitespace-nowrap -rotate-[25deg]">
+                  PAID
+                </span>
+              </div>
 
-            {/* Reservation + Receipt IDs */}
-            <div className="relative z-10 grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Receipt No</p>
-                <p className="text-sm font-extrabold text-slate-900 dark:text-white">#{reservation.id?.substring(0, 6).toUpperCase()}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Date</p>
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{dateStr}</p>
-              </div>
-            </div>
-
-            {/* Location + Time */}
-            <div className="relative z-10 grid grid-cols-2 gap-4 pb-3 border-b border-slate-100 dark:border-slate-800/60">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Location</p>
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{reservation.locationName}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Time Slot</p>
-                <div className="flex items-center justify-end gap-1 text-[#004D40] dark:text-emerald-400">
-                  <Clock size={12} />
-                  <p className="text-xs font-bold">{timeStr}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Vehicle + Payment Method */}
-            <div className="relative z-10 space-y-2">
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
-                  <Car size={18} className="text-[#004D40] dark:text-emerald-400" />
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
-                    {reservation.carModel
-                      ? `${reservation.carModel}${reservation.carColor ? ` · ${reservation.carColor}` : ""}`
-                      : "Registered Vehicle"}
-                  </p>
-                  <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{reservation.plateNumber || "N/A"}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50">
-                <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
-                  <CreditCard size={18} className="text-[#004D40] dark:text-emerald-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-[11px] font-bold text-slate-900 dark:text-white">ParkAddis Wallet</p>
-                  <p className="text-[9px] text-slate-500 dark:text-slate-400">Paid securely</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Fee Breakdown */}
-            <div className="relative z-10 bg-emerald-50/50 dark:bg-emerald-900/10 px-5 py-3 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/40">
-              <div className="space-y-2">
+              {/* Reservation + Receipt IDs */}
+              <div className="relative z-10 grid grid-cols-2 gap-4">
                 <div>
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Parking ({durationDisplay})</span>
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {parkingFee.toFixed(2)}</span>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Receipt No</p>
+                  <p className="text-sm font-extrabold text-slate-900 dark:text-white">#{reservation.id?.substring(0, 6).toUpperCase()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Date</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300">{dateStr}</p>
+                </div>
+              </div>
+
+              {/* Location + Time */}
+              <div className="relative z-10 grid grid-cols-2 gap-4 pb-3 border-b border-slate-100 dark:border-slate-800/60">
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Location</p>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">{reservation.locationName}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Time Slot</p>
+                  <div className="flex items-center justify-end gap-1 text-[#004D40] dark:text-emerald-400">
+                    <Clock size={12} />
+                    <p className="text-xs font-bold">{timeStr}</p>
                   </div>
-                  <p className="text-[9px] text-slate-400 dark:text-slate-400 mt-0.5">{durationHrs.toFixed(2)} hrs × ETB {baseFeePerHour.toFixed(2)}/hr</p>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Reservation Fee</span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {reservationFee.toFixed(2)}</span>
+              </div>
+
+              {/* Vehicle + Payment Method */}
+              <div className="relative z-10 space-y-2">
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                  <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                    <Car size={18} className="text-[#004D40] dark:text-emerald-400" />
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-[11px] font-bold text-slate-900 dark:text-white truncate">
+                      {reservation.carModel
+                        ? `${reservation.carModel}${reservation.carColor ? ` · ${reservation.carColor}` : ""}`
+                        : "Registered Vehicle"}
+                    </p>
+                    <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{reservation.plateNumber || "N/A"}</p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center pb-2 border-b border-emerald-100/50 dark:border-emerald-800/20">
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Service Fee</span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {serviceFee.toFixed(2)}</span>
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                  <div className="p-2 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700/50">
+                    <CreditCard size={18} className="text-[#004D40] dark:text-emerald-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-[11px] font-bold text-slate-900 dark:text-white">ParkAddis Wallet</p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400">Paid securely</p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center pt-1">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#004D40] dark:text-emerald-400">Total Paid</span>
-                  <span className="text-xl font-extrabold text-slate-900 dark:text-white">ETB {totalFee}</span>
+              </div>
+
+              {/* Fee Breakdown */}
+              <div className="relative z-10 bg-emerald-50/50 dark:bg-emerald-900/10 px-5 py-3 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/40">
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Parking ({durationDisplay})</span>
+                      <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {parkingFee.toFixed(2)}</span>
+                    </div>
+                    <p className="text-[9px] text-slate-400 dark:text-slate-400 mt-0.5">{durationHrs.toFixed(2)} hrs × ETB {baseFeePerHour.toFixed(2)}/hr</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Reservation Fee</span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {reservationFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pb-2 border-b border-emerald-100/50 dark:border-emerald-800/20">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-700/60 dark:text-emerald-400/60">Service Fee</span>
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">ETB {serviceFee.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#004D40] dark:text-emerald-400">Total Paid</span>
+                    <span className="text-xl font-extrabold text-slate-900 dark:text-white">ETB {totalFee}</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="px-8 pb-10 pt-2 bg-white dark:bg-slate-900 relative z-10">
+        {/* FIXED FOOTER */}
+        <div className="px-8 pb-10 pt-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 relative z-20">
           <button className="w-full bg-[#004D40] hover:bg-[#004D40]/90 text-white font-bold py-4 rounded-2xl shadow-lg shadow-[#004D40]/20 transition-all flex items-center justify-center gap-2 group active:scale-[0.98]">
             <Download size={18} className="group-hover:scale-110 transition-transform" />
             Download Receipt

@@ -25,8 +25,8 @@ export default function LocationsContainer({
     setUserLocation: setSessionLocation,
   } = useSession();
 
-  const [distanceFilter, setDistanceFilter] = useState<"All" | 200 | 400 | 600>(
-    "All",
+  const [distanceFilter, setDistanceFilter] = useState<"All" | 200 | 400 | 600 | 1000>(
+    1000,
   );
   const { coords: mapLocation, navigation, actions } = useMap();
   const [displayedLocations, setDisplayedLocations] = useState<
@@ -79,7 +79,7 @@ export default function LocationsContainer({
     }
   }, [isLoading, activeReservation, navigation.status, displayedLocations, actions]);
 
-  const handleFilterClick = async (filter: "All" | 200 | 400 | 600) => {
+  const handleFilterClick = async (filter: "All" | 200 | 400 | 600 | 1000) => {
     setDistanceFilter(filter);
     setIsLoading(true);
 
@@ -88,7 +88,7 @@ export default function LocationsContainer({
 
     try {
       const res = await fetch(
-        `/api/locations?distance=${filter}&lat=${lat}&lng=${lng}`,
+        `/api/locations?distance=${filter === "All" ? 10000 : filter}&lat=${lat}&lng=${lng}`,
       );
 
       if (res.ok) {
@@ -102,6 +102,13 @@ export default function LocationsContainer({
       setIsLoading(false);
     }
   };
+
+  // Auto-load 1km radius on initial location acquisition
+  useEffect(() => {
+    if (sessionLocation && displayedLocations.length === 0 && !isLoading) {
+      handleFilterClick(1000);
+    }
+  }, [sessionLocation]);
 
   // Show Search/Carousel only if no active reservation AND in IDLE/PREVIEW
   const showSearchAndCarousel = !activeReservation && (["IDLE", "PREVIEW"] as string[]).includes(navigation.status);
@@ -191,7 +198,7 @@ export default function LocationsContainer({
           {/* Filter Pills */}
           <div className="w-full h-[40px]">
             <div className="flex gap-2 pointer-events-auto overflow-x-auto max-w-lg w-full no-scrollbar pb-3">
-              {["All", 200, 400, 600].map((filter) => (
+              {["All", 1000, 600, 400, 200].map((filter) => (
                 <button
                   key={filter}
                   onClick={() => handleFilterClick(filter as any)}
@@ -202,7 +209,7 @@ export default function LocationsContainer({
                       : "bg-card/90 border-border/50 text-foreground hover:border-primary/50 hover:bg-card"
                   } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
-                  {filter === "All" ? "All" : `${filter}m`}
+                  {filter === "All" ? "All" : filter === 1000 ? "1km" : `${filter}m`}
                 </button>
               ))}
             </div>
