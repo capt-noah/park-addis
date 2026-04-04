@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Locations from "./Locations";
 import { Search, SlidersHorizontal, Ticket, Navigation, X } from "lucide-react";
@@ -26,13 +26,14 @@ export default function LocationsContainer({
   } = useSession();
 
   const [distanceFilter, setDistanceFilter] = useState<"All" | 200 | 400 | 600 | 1000>(
-    1000,
+    "All",
   );
   const { coords: mapLocation, navigation, actions } = useMap();
   const [displayedLocations, setDisplayedLocations] = useState<
     ParkingFeatures[]
   >(locationsData?.features || []);
   const [isLoading, setIsLoading] = useState(false);
+  const initialAutoLoad = useRef(false);
 
   const selectedLocation = displayedLocations.find((loc: ParkingFeatures) => loc.properties.id == selectedLocationId)
 
@@ -105,8 +106,9 @@ export default function LocationsContainer({
 
   // Auto-load 1km radius on initial location acquisition
   useEffect(() => {
-    if (sessionLocation && displayedLocations.length === 0 && !isLoading) {
-      handleFilterClick(1000);
+    if (sessionLocation && !initialAutoLoad.current && !isLoading) {
+      initialAutoLoad.current = true;
+      handleFilterClick("All");
     }
   }, [sessionLocation]);
 
