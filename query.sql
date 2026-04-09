@@ -8,6 +8,28 @@ CREATE TABLE users (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE employees (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    full_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    phone_number TEXT UNIQUE NOT NULL,
+    status TEXT 
+        CHECK(status in ('ACTIVE', 'ON_BREAK'))
+    role TEXT DEFAULT 'employee',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE admins (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    full_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    phone_number TEXT UNIQUE NOT NULL,
+    role TEXT DEFAULT 'admin',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE vehicles (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

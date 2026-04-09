@@ -33,4 +33,4 @@ app.get('/', (req, res) => {
     return res.send("it actually works gng!!")
 })
 
-app.listen(process.env.PORT, () => console.log(`listening... ${process.env.CHAPA_SECRET_KEY} and ${process.env.BACKEND_URL} and ${process.env.PORT}`))
+app.listen(process.env.PORT, () => console.log(`listening...`))

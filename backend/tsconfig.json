@@ -9,8 +9,8 @@
     "noEmit": true, // Bun runs TS directly, so we don't need to emit JS files locally
     "composite": true,
     "strict": true,
-    "downlevelIteration": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
