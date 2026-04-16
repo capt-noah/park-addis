@@ -8,7 +8,7 @@ import crypto from "crypto"
 import { users } from "../schema/users"
 
 
-export async function createPayment(qrToken: string) {
+export async function createPayment(qrToken: string, returnUrl?: string) {
 
     const response = await db.select()
                              .from(reservations)
@@ -57,7 +57,7 @@ export async function createPayment(qrToken: string) {
                              })
     
     const paymentCallback = "payment"
-    const paymentSession = await initializeChapaPayment({amount, email: user.email, fullName: user.fullName, phone_number: user.phoneNumber, tx_ref, paymentCallback})
+    const paymentSession = await initializeChapaPayment({amount, email: user.email, fullName: user.fullName, phone_number: user.phoneNumber, tx_ref, paymentCallback, returnUrl})
     
     return paymentSession ?? null
 }
@@ -99,7 +99,7 @@ export async function failPayment(transactionId: string) {
     return response ?? null
 }
 
-export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref, paymentCallback}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string, paymentCallback: string}) {
+export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref, paymentCallback, returnUrl}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string, paymentCallback: string, returnUrl?: string}) {
 
     const first_name = fullName.split(" ")[0];
     const last_name = fullName.split(" ")[1] || "N/A";
@@ -115,7 +115,7 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
         phone_number: formattedPhone,
         tx_ref,
         callback_url: `${process.env.BACKEND_URL}/api/${paymentCallback}/callback`,
-        return_url: `${process.env.VERCEL_URL}/payment/success?tx_ref=${tx_ref}`,
+        return_url: returnUrl || `${process.env.VERCEL_URL}/payment/success?tx_ref=${tx_ref}`,
         "customization[title]": "Park Addis Payment",
         "customization[description]": "Parking Reservation Payment"
     };

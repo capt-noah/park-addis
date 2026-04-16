@@ -39,7 +39,7 @@ export async function getWalletTransactions(walletId: string){
     return walletTrx ?? null
 }
 
-export async function topUpWallet(userId: string, amount: string) {
+export async function topUpWallet(userId: string, amount: string, returnUrl?: string) {
     
     const response = await db.transaction(async (tx) => {
 
@@ -82,7 +82,8 @@ export async function topUpWallet(userId: string, amount: string) {
         fullName: response.fullName, 
         phone_number: response.phoneNumber, 
         tx_ref: response.tx_ref, 
-        paymentCallback 
+        paymentCallback,
+        returnUrl
     })
     
     return chapaPayment ?? null

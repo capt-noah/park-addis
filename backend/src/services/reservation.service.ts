@@ -108,7 +108,7 @@ export async function getActiveReservation(userId: string) {
 	return active[0] || null;
 }
 
-export async function validateQRToken(token: string) {
+export async function validateQRToken(token: string, returnUrl?: string) {
 	const response = await db.select()
 							 .from(reservations)
 							 .where(eq(reservations.qrToken, token))
@@ -125,7 +125,7 @@ export async function validateQRToken(token: string) {
 		// return await createPayment(token)
 	} else if (reservation.status === 'COMPLETED') {
 		if(!reservation.actualStartTime || !reservation.actualEndTime) return null
-		return await createPayment(token)
+		return await createPayment(token, returnUrl)
 	} else {
 		throw new Error(`Reservation is already ${reservation.status}`)
 	}

@@ -10,13 +10,13 @@ const paymentRouter = express.Router()
 
 paymentRouter.post('/create', async (req, res) => {
     try {
-        const { qrToken } = req.body
+        const { qrToken, returnUrl } = req.body
         
         if (!qrToken) {
             return res.status(400).json({ error: "Missing QR Token" })
         }
 
-        const payment = await validateQRToken(qrToken)
+        const payment = await validateQRToken(qrToken, returnUrl)
 
         if (!payment) {
             return res.status(401).json({ error: "Payment Failed" })

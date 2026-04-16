@@ -38,9 +38,9 @@ walletRouter.post('/transaction', async (req, res) => {
 // 3. Session-based topup
 walletRouter.post('/topup', authMiddleware, async (req, res) => {
     try {
-        const { amount } = req.body
+        const { amount, returnUrl } = req.body
         const userId = res.locals.user.id
-        const topupRes = await topUpWallet(userId, amount)
+        const topupRes = await topUpWallet(userId, amount, returnUrl)
         if (!topupRes) return res.status(403).json({ error: "Unable To TopUp" })
         return res.status(200).json(topupRes)
     } catch (error: any) {
