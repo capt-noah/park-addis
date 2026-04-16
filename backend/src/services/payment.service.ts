@@ -101,13 +101,20 @@ export async function failPayment(transactionId: string) {
 
 export async function initializeChapaPayment({amount, fullName, phone_number, email, tx_ref, paymentCallback, returnUrl}: {amount: string, email: string, tx_ref: string, fullName: string, phone_number: string, paymentCallback: string, returnUrl?: string}) {
 
-    const first_name = fullName.split(" ")[0];
-    const last_name = fullName.split(" ")[1] || "N/A";
+    const first_name = fullName.split(" ")[0] || "Driver";
+    const last_name = fullName.split(" ")[1] || "User";
     
-    const formattedPhone = "0" + phone_number
+    // Normalize phone: Ensure it starts with 0 and has no other prefixes
+    let cleanPhone = phone_number.replace(/\D/g, "");
+    if (cleanPhone.startsWith("251")) cleanPhone = cleanPhone.slice(3);
+    if (cleanPhone.startsWith("0")) cleanPhone = cleanPhone.slice(1);
+    const formattedPhone = "0" + cleanPhone;
+
+    // Chapa expects amount as string, often prefers 2 decimal places
+    const formattedAmount = (typeof amount === 'number' ? amount : parseFloat(amount)).toFixed(2);
 
     const body = {
-        amount,
+        amount: formattedAmount,
         currency: "ETB",
         email,
         first_name,
@@ -135,14 +142,16 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
         const data = (await response.json()) as any;
 
         if (!response.ok || data.status !== 'success') {
-            console.error("[CHAPA] Initialization Error:", data);
-            throw new Error(data.message || JSON.stringify(data));
+            const errorDetail = typeof data.message === 'string' ? data.message : JSON.stringify(data.message || data);
+            console.error("[CHAPA] Initialization Error Detail:", errorDetail);
+            throw new Error(errorDetail);
         }
 
-        return data; // Returns { status, message, data: { checkout_url } }
+        return data; 
     } catch (error: any) {
-        console.error("[CHAPA] Initialization Exception:", error.message);
-        throw new Error(`Payment Initialization Failed: ${error.message}`);
+        const errMsg = typeof error.message === 'string' ? error.message : JSON.stringify(error);
+        console.error("[CHAPA] Initialization Exception:", errMsg);
+        throw new Error(`Payment Initialization Failed: ${errMsg}`);
     }
 }
 
