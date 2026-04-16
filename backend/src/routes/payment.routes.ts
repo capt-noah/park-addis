@@ -6,7 +6,17 @@ import { confirmTopUp } from "../services/wallet.service"
 
 const paymentRouter = express.Router()
 
-// ... [existing /create and /callback] ...
+/**
+ * MOBILE REDIRECT: Chapa requires an https:// return_url.
+ * This route receives the user after payment and bounces them back to the app.
+ */
+paymentRouter.get('/success', (req, res) => {
+    const tx_ref = req.query.tx_ref || req.query.trx_ref;
+    console.log(`[CHAPA] Mobile user returning for tx_ref: ${tx_ref}`);
+    
+    // Redirect back to the mobile app scheme
+    return res.redirect(`parkaddis://payment-success?tx_ref=${tx_ref}`);
+});
 
 paymentRouter.post('/create', async (req, res) => {
     try {
