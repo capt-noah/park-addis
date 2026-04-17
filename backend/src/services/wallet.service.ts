@@ -103,7 +103,7 @@ export async function calculateBalanceFromHistory(walletId: string, tx?: any) {
                 WHEN type = 'TOPUP' THEN amount 
                 WHEN type = 'RESERVATION_CHARGE' THEN -amount 
                 WHEN type = 'RESERVATION_HOLD' THEN -amount 
-                WHEN type = 'RESERVATION_REFUND' THEN amount 
+                WHEN type = 'REFUND' THEN amount 
                 ELSE 0 
             END
         )`,
@@ -165,7 +165,7 @@ export async function refundReservationFee(reservationId: string, tx?: any) {
     .values({
       walletId: refundRecord.walletId,
       amount: new Decimal(refundRecord.amount).toString(),
-      type: "RESERVATION_REFUND",
+      type: "REFUND",
       status: "SUCCESS",
       referenceId: crypto.randomUUID(),
       completedAt: new Date(),
