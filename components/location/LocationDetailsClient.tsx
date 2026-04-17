@@ -1,18 +1,22 @@
 "use client";
 
-import { CheckCircle2, MapPin, Zap, Layers, ShieldCheck, UserRound, Plus, Minus} from "lucide-react";
+import {
+  CheckCircle2,
+  MapPin,
+  Zap,
+  Layers,
+  ShieldCheck,
+  UserRound,
+  Plus,
+  Minus,
+} from "lucide-react";
 import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ParkingLocation } from "@/types/location";
-import {
-  StatItem,
-  AmenityItem,
-  RuleItem,
-  BookingWidget,
-} from "./details";
+import { StatItem, AmenityItem, RuleItem, BookingWidget } from "./details";
 import { useSession } from "../session/AppSessionProvider";
 import { useUI } from "../ui/UIProvider";
 
@@ -33,6 +37,7 @@ export default function LocationDetailsClient({
 
   const [vehicles] = useState<any[]>(initialVehicles);
   const [isReserving, setIsReserving] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isArrivalTimePickerOpen, setIsArrivalTimePickerOpen] = useState(false);
@@ -46,6 +51,24 @@ export default function LocationDetailsClient({
   const [selectedVehicle, setSelectedVehicle] = useState<any>(
     initialVehicles[0] || null,
   );
+
+  // Fetch wallet balance on mount
+  useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const res = await fetch("/api/wallet");
+        if (res.ok) {
+          const wallet = await res.json();
+          setWalletBalance(parseFloat(wallet.balance));
+        }
+      } catch (error) {
+        console.error("Failed to fetch wallet:", error);
+      }
+    };
+    fetchWallet();
+  }, []);
+
+  const RESERVATION_FEE = 20; // Fixed reservation fee in ETB
 
   const updateArrivalTime = (time: string) => {
     setArrivalTime(time);
@@ -82,12 +105,25 @@ export default function LocationDetailsClient({
       return;
     }
 
+    if (walletBalance === null) {
+      showNotification("Loading wallet balance, please wait.", "info");
+      return;
+    }
+
+    if (walletBalance < RESERVATION_FEE) {
+      showNotification(
+        `Insufficient wallet balance. You need at least ETB ${RESERVATION_FEE} for the reservation fee.`,
+        "error",
+      );
+      return;
+    }
+
     const duration = calculateDuration();
     const total = calculateTotal();
-    
+
     showConfirmation({
       title: "Confirm Your Reservation",
-      message: `You are booking a spot at ${location.name} for ${duration.toFixed(1)} hours. The total cost will be ETB ${total.toFixed(2)}. Do you want to proceed?`,
+      message: `You are booking a spot at ${location.name} for ${duration.toFixed(1)} hours. The total cost will be ETB ${total.toFixed(2)}, but you'll only pay a reservation fee of ETB ${RESERVATION_FEE} now. You can cancel within 15 minutes for a full refund. Do you want to proceed?`,
       confirmText: "Confirm Booking",
       cancelText: "Review Details",
       onConfirm: async () => {
@@ -102,13 +138,17 @@ export default function LocationDetailsClient({
 
         try {
           if (activeReservation) {
-            showNotification("You already have an active parking session. Please complete it before booking a new one.", "error");
+            showNotification(
+              "You already have an active parking session. Please complete it before booking a new one.",
+              "error",
+            );
             return;
           }
 
+          // 1. Create reservation
           const res = await fetch("/api/reservation", {
             method: "POST",
-            headers: { 
+            headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -119,21 +159,56 @@ export default function LocationDetailsClient({
             }),
           });
 
-          if (res.ok) {
-            await refreshSession();
-            showNotification("Reservation successful!", "success");
-            router.push("/reservations");
-          } else {
+          if (!res.ok) {
             const data = await res.json();
-            showNotification(data.error || "Failed to create reservation", "error");
+            showNotification(
+              data.error || "Failed to create reservation",
+              "error",
+            );
+            return;
           }
+
+          const reservationData = await res.json();
+          const reservationId = reservationData.reservedSpot.id;
+
+          // 2. Pay reservation fee
+          const paymentRes = await fetch("/api/wallet/pay/reservation-fee", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              reservationId,
+              amount: RESERVATION_FEE.toString(),
+            }),
+          });
+
+          if (!paymentRes.ok) {
+            const paymentData = await paymentRes.json();
+            showNotification(
+              paymentData.error || "Failed to pay reservation fee",
+              "error",
+            );
+            // Optionally cancel the reservation if payment fails
+            return;
+          }
+
+          const paymentData = await paymentRes.json();
+          setWalletBalance(parseFloat(paymentData.balance));
+
+          await refreshSession();
+          showNotification(
+            "Reservation successful! Reservation fee paid.",
+            "success",
+          );
+          router.push("/reservations");
         } catch (err) {
           console.error("Reservation error:", err);
           showNotification("An unexpected error occurred.", "error");
         } finally {
           setIsReserving(false);
         }
-      }
+      },
     });
   };
 
