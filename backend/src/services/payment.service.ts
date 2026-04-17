@@ -35,7 +35,7 @@ export async function createPayment(qrToken: string, returnUrl?: string) {
 
     // Handle 0-cost or very low cost sessions (e.g. under 1 minute)
     if (rawAmount < 1.0) {
-        console.log(`[PAYMENT] Amount ${amount} is too low for Chapa. Marking reservation ${reservation.id} as PAID automatically.`);
+
         
         await db.update(reservations)
                 .set({ status: 'PAID' })
@@ -64,7 +64,7 @@ export async function createPayment(qrToken: string, returnUrl?: string) {
 
 export async function completePayment(transactionId: string) {
     return await db.transaction(async (tx) => {
-        console.log(`[PAYMENT] Completing payment for: ${transactionId}`);
+
         
         // 1. Update Payment record
         const [payment] = await tx.update(payments)
@@ -73,7 +73,7 @@ export async function completePayment(transactionId: string) {
                 .returning();
 
         if (!payment) {
-            console.error(`[PAYMENT] Payment record not found for: ${transactionId}`);
+
             return null;
         }
 
@@ -82,7 +82,7 @@ export async function completePayment(transactionId: string) {
                 .set({ status: 'PAID' })
                 .where(eq(reservations.id, payment.reservationId));
 
-        console.log(`[PAYMENT] Success: Updated payment ${payment.id} and reservation ${payment.reservationId}`);
+
         return payment;
     });
 }
@@ -127,7 +127,7 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
         "customization[description]": "Parking Reservation Payment"
     };
 
-    console.log("[CHAPA] Initializing with fetch:", JSON.stringify(body, null, 2));
+
 
     try {
         const response = await fetch(`${process.env.CHAPA_URL}/initialize`, {
@@ -143,23 +143,23 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
 
         if (!response.ok || data.status !== 'success') {
             const errorDetail = typeof data.message === 'string' ? data.message : JSON.stringify(data.message || data);
-            console.error("[CHAPA] Initialization Error Detail:", errorDetail);
+
             throw new Error(errorDetail);
         }
 
         return data; 
     } catch (error: any) {
         const errMsg = typeof error.message === 'string' ? error.message : JSON.stringify(error);
-        console.error("[CHAPA] Initialization Exception:", errMsg);
+
         throw new Error(`Payment Initialization Failed: ${errMsg}`);
     }
 }
 
 export async function verifyChapaPayment(tx_ref: string) {
-    console.log(`[CHAPA] Verifying transaction: ${tx_ref}`);
+
     
     if (!tx_ref || tx_ref === 'undefined') {
-        console.error("[CHAPA] Invalid tx_ref provided");
+
         return null;
     }
 
@@ -172,7 +172,7 @@ export async function verifyChapaPayment(tx_ref: string) {
         });
 
         const data = (await response.json()) as any;
-        console.log(`[CHAPA] Verify result for ${tx_ref}:`, JSON.stringify(data, null, 2));
+
 
         // Note: Based on the docs provided, top-level status identifies the API success.
         // The transaction status is inside data.status.
@@ -182,7 +182,7 @@ export async function verifyChapaPayment(tx_ref: string) {
 
         return data;
     } catch (error: any) {
-        console.error("[CHAPA] Verify Exception:", error.message);
+
         throw error;
     }
 }

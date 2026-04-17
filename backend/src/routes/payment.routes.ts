@@ -11,11 +11,13 @@ const paymentRouter = express.Router()
  * This route receives the user after payment and bounces them back to the app.
  */
 paymentRouter.get('/success', (req, res) => {
-    const tx_ref = req.query.tx_ref || req.query.trx_ref;
-    console.log(`[CHAPA] Mobile user returning for tx_ref: ${tx_ref}`);
+    // Chapa might use different keys depending on the API version or environment
+    const tx_ref = req.query.tx_ref || req.query.trx_ref || req.query.transaction_id || req.query.reference;
     
-    // Redirect back to the mobile app scheme
-    return res.redirect(`parkaddis://payment-success?tx_ref=${tx_ref}`);
+
+    
+    // Redirect back to the mobile app scheme, ensuring we pass a non-null string
+    return res.redirect(`parkaddis://payment-success?tx_ref=${tx_ref || ''}&status=${req.query.status || 'success'}`);
 });
 
 paymentRouter.post('/create', async (req, res) => {
@@ -34,7 +36,7 @@ paymentRouter.post('/create', async (req, res) => {
         
         return res.status(200).json(payment)
     } catch (error: any) {
-        console.error("Payment creation error:", error)
+
         return res.status(500).json({ 
             error: error.message || "Internal Server Error",
             details: "An unexpected error occurred while creating the payment session."
@@ -47,7 +49,7 @@ paymentRouter.all('/callback', async (req, res) => {
     try {
         const tx_ref = req.body.tx_ref || req.query.tx_ref || req.body.trx_ref || req.query.trx_ref;
 
-        console.log(`Payment Callback received: ${tx_ref}`, { body: req.body, query: req.query });
+
 
         if (!tx_ref) {
             return res.status(400).json({ error: "Missing transaction reference" });
@@ -68,7 +70,7 @@ paymentRouter.all('/callback', async (req, res) => {
         await failPayment(tx_ref)
         return res.status(400).json({error: "Payment Failed"})
     } catch (error: any) {
-        console.error("Payment Callback Error:", error.message);
+
         return res.status(500).json({ error: error.message });
     }
 })
@@ -93,14 +95,14 @@ paymentRouter.post('/webhook', async (req: any, res) => {
             .digest('hex')
 
         if (hash !== signature) {
-            console.error("Webhook Signature Mismatch!")
+
             return res.status(401).json({ error: "Invalid signature" })
         }
 
         const payload = req.body
         const { tx_ref, status } = payload
 
-        console.log(`Webhook received: ${tx_ref} [${status}]`)
+
 
         if (status === 'success') {
             // 1. Try to update reservation payment
@@ -110,22 +112,22 @@ paymentRouter.post('/webhook', async (req: any, res) => {
             if (!reservationPayment) {
                 try {
                     await confirmTopUp(tx_ref)
-                    console.log(`Wallet top-up confirmed via webhook: ${tx_ref}`)
+
                 } catch (walletErr) {
                     // Not found in either table?
-                    console.error("Transaction not found for webhook:", tx_ref)
+
                 }
             } else {
-                console.log(`Reservation payment confirmed via webhook: ${tx_ref}`)
+
             }
         } else {
-            console.log(`Payment failed or was cancelled: ${tx_ref}`)
+
             await failPayment(tx_ref)
         }
 
         return res.status(200).send("OK")
     } catch (error: any) {
-        console.error("Webhook Error:", error.message)
+
         return res.status(500).json({ error: error.message })
     }
 })
