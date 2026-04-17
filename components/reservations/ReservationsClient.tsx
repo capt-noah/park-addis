@@ -42,6 +42,7 @@ export default function ReservationsClient({
         try {
           const response = await fetch(`/api/reservation?id=${reservationId}`, {
             method: "DELETE",
+            credentials: "include",
           });
 
           if (response.ok) {
