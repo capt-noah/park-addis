@@ -1,10 +1,11 @@
 import express from "express";
 import { registerAndSetupUser, validateUser, createSession, deleteSession } from "../services/auth.service";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { rateLimitMiddleware } from "../middleware/rate-limit.middleware";
 
 const authRouter = express.Router();
 
-authRouter.post("/register", async (req, res) => {
+authRouter.post("/register", rateLimitMiddleware("register", 5, 3600), async (req, res) => {
   try {
     const { fullName, email, password, phoneNumber, role, car } = req.body;
     const { plateNumber, carModel, color } = car || {};
@@ -37,7 +38,7 @@ authRouter.post("/register", async (req, res) => {
   }
 });
 
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", rateLimitMiddleware("login", 10, 900), async (req, res) => {
   const { email, password } = req.body;
   const user = await validateUser(email, password);
 

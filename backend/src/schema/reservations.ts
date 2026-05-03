@@ -16,7 +16,7 @@ export const reservations = pgTable(
         actualEndTime: timestamp("actual_end_time"),
         status: text("status").notNull().default("RESERVED"),
         qrToken: text("qr_token").notNull().unique(),
-        createdAt: timestamp("created_at").defaultNow()
+        createdAt: timestamp("created_at").defaultNow().notNull()
     },
     (table) => ({
         reservationsUserIndex: uniqueIndex("idx_reservations_user_id").on(table.userId),

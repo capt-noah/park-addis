@@ -8,6 +8,7 @@ import reservationRouter from "./routes/reservation.routes";
 import paymentRouter from "./routes/payment.routes"
 import walletRouter from "./routes/wallet.routes";
 import vehicleRouter from "./routes/vehicle.routes";
+import { redis } from "./redis";
 
 app.use(cors({
   origin: ["http://localhost:3000", "https://park-addis.vercel.app"],
@@ -29,8 +30,10 @@ app.use('/api/payment', paymentRouter)
 app.use('/api/wallet', walletRouter)
 app.use('/api/vehicle', vehicleRouter)
 
-app.get('/', (req, res) => {
-    return res.send("it actually works gng!!")
+app.get('/', async (req, res) => {
+  await redis.set("hello", "gng")
+  const value = await redis.get("hello")
+  return res.send(value)
 })
 
 app.listen(process.env.PORT, () => console.log(`listening...`))

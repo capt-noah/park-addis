@@ -1,9 +1,31 @@
 import express from "express"
-import { getParkingLocation, getParkingLocationsJson, getParkingLocationsWithinRange, getParkingSpot, getParkingSpotFromLocationId } from "../services/parking.service"
+import { getParkingLocation, getParkingLocationsJson, getParkingLocationsWithinRange, getParkingSpot, getParkingSpotFromLocationId, searchParkingLocationsByName } from "../services/parking.service"
 import { authMiddleware } from "../middleware/auth.middleware"
 
 
 const parkingRouter = express.Router()
+
+parkingRouter.get('/search', async (req, res) => {
+    const { q, lat, lng } = req.query;
+
+    if (!q) return res.status(400).json({ error: "Query parameter 'q' is required" });
+
+    try {
+        const coor = (lat && lng) ? {
+            lat: parseFloat(lat as string),
+            lng: parseFloat(lng as string)
+        } : undefined;
+
+        const locations = await searchParkingLocationsByName(q as string, coor);
+        
+        if (!locations) return res.status(404).json({ error: "No locations found matching the query" });
+
+        return res.status(200).json({ locations });
+    } catch (error) {
+        console.error("Search Error:", error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 parkingRouter.get('/', async (req, res) => {
     const { distance, lat, lng } = req.query;

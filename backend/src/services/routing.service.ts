@@ -1,8 +1,19 @@
+import { getCachedRoute, setRouteCache } from "./cache/route-cache";
+
 export async function getRoute(
   start: { lng: number; lat: number } | null,
   end: [number, number] | null,
 ) {
   if (!start || !end) return;
+
+  // Round to 4 decimal places for cache efficiency
+  const sLat = Number(start.lat.toFixed(4));
+  const sLng = Number(start.lng.toFixed(4));
+  const eLat = Number(end[1].toFixed(4));
+  const eLng = Number(end[0].toFixed(4));
+
+  const cache = await getCachedRoute(sLat, sLng, eLat, eLng);
+  if (cache) return cache;
 
   const response = await fetch(
     `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end[0]},${end[1]}?overview=full&geometries=geojson`,
@@ -10,13 +21,17 @@ export async function getRoute(
 
   const data = (await response.json()) as { routes?: { geometry: any }[] };
 
-  if (!data?.routes) return;
-
-  if (!data || data?.routes?.length === 0) {
+  if (!data?.routes || data.routes.length === 0) {
     throw new Error("No Route Found");
   }
 
-  return data.routes[0].geometry;
+  const geometry = data.routes[0].geometry;
+  
+  if (geometry) {
+    await setRouteCache(sLat, sLng, eLat, eLng, geometry);
+  }
+
+  return geometry;
 }
 
 export async function getRouteBoounds(coords: number[][]) {

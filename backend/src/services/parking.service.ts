@@ -2,6 +2,7 @@ import { db } from "../db";
 import { parkingLocations } from "../schema/parkingLocations";
 import { sql, eq, gt, and } from "drizzle-orm";
 import { parkingSpots } from "../schema/parkingSpots";
+import { getCachedNearbyParking, setNearbyParkingCache, clearAllNearbyParkingCache, getCachedParkingSearch, setParkingSearchCache } from "./cache/parking-cache";
 
 
 export async function createParkingLocation( name: string, address: string, coor: { lng: number, lat: number } ) {
@@ -15,10 +16,21 @@ export async function createParkingLocation( name: string, address: string, coor
             RETURNING(id, name, address)
         `)
     
+    if (response[0]) {
+        await clearAllNearbyParkingCache();
+    }
+    
     return response[0] ?? null
 }
 
 export async function getParkingLocationsWithinRange(range: number, coor: {lng: number, lat: number}) {
+    // Round to 4 decimal places (~11m precision) to increase cache hits
+    const lat = Number(coor.lat.toFixed(4));
+    const lng = Number(coor.lng.toFixed(4));
+
+    const cache = await getCachedNearbyParking(lat, lng, range);
+    if (cache) return cache;
+
     const response = await db.execute(sql`
                         SELECT
                             JSON_BUILD_OBJECT(
@@ -45,7 +57,51 @@ export async function getParkingLocationsWithinRange(range: number, coor: {lng: 
                         WHERE ST_DWithin(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY, ${range})
                     `)
     
-    return response[0]?.geojson ?? null
+    const result = response[0]?.geojson ?? null;
+    if (result) {
+        await setNearbyParkingCache(lat, lng, range, result);
+    }
+
+    return result;
+}
+
+export async function searchParkingLocationsByName(query: string, coor?: {lng: number, lat: number}) {
+    const cacheKey = query + (coor ? `:${coor.lat.toFixed(4)},${coor.lng.toFixed(4)}` : '');
+    const cache = await getCachedParkingSearch(cacheKey);
+    if (cache) return cache;
+
+    const response = await db.execute(sql`
+                        SELECT
+                            JSON_BUILD_OBJECT(
+                                'type', 'FeatureCollection',
+                                'features', JSON_AGG(
+                                JSON_BUILD_OBJECT(
+                                    'type', 'Feature',
+                                    'geometry', ST_AsGeoJson(geom)::json,
+                                    'properties', JSON_BUILD_OBJECT(
+                                        'id', id,
+                                        'name', name,
+                                        'address', address,
+                                        'ratingsSum', ratings_sum,
+                                        'ratingsCount', ratings_count,
+                                        'ratings', CASE WHEN ratings_count > 0 THEN ratings_sum / ratings_count ELSE 0 END,
+                                        'price', display_price_per_hour,
+                                        'distance', ${coor ? sql`ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY)` : sql`NULL`},
+                                        'eta', ${coor ? sql`ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) / 5 / 100` : sql`NULL`}
+                                    )
+                                )
+                                )
+                            ) AS geojson
+                        FROM parking_locations
+                        WHERE name ILIKE ${`%${query}%`} OR address ILIKE ${`%${query}%`}
+                    `);
+    
+    const result = response[0]?.geojson ?? null;
+    if (result) {
+        await setParkingSearchCache(cacheKey, result);
+    }
+
+    return result;
 }
 
 export async function getParkingLocation(id: string) {

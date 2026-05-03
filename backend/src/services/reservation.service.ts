@@ -2,16 +2,14 @@ import { db } from "../db";
 import { reservations } from "../schema/reservations";
 import { parkingSpots } from "../schema/parkingSpots";
 import { parkingLocations } from "../schema/parkingLocations";
-import {
-  checkParkingAvailability,
-  updateParkingAvailability,
-} from "./parking.service";
+import { checkParkingAvailability, updateParkingAvailability } from "./parking.service";
 import { createPayment } from "./payment.service";
 import { vehicles } from "../schema/vehicles";
 import { eq, and, or, desc } from "drizzle-orm";
 import crypto from "crypto";
 import { payments } from "../schema/payments";
 import { refundReservationFee } from "./wallet.service";
+import { getCachedActiveReservation, setActiveReservationCache, invalidateActiveReservationCache } from "./cache/reservation-cache";
 
 export async function reserveSpot(
   userId: string,
@@ -41,8 +39,11 @@ export async function reserveSpot(
 
   if (!response) return null;
 
-  // Decrement available slots on reservation
-  await updateParkingAvailability(spotId, 0, 1);
+  if (response) {
+    // Decrement available slots on reservation
+    await updateParkingAvailability(spotId, 0, 1);
+    await invalidateActiveReservationCache(userId);
+  }
 
   return response;
 }
@@ -89,6 +90,9 @@ export async function getUserReservations(userId: string) {
 }
 
 export async function getActiveReservation(userId: string) {
+  const cache = await getCachedActiveReservation(userId);
+  if (cache) return cache;
+
   const active = await db
     .select({
       id: reservations.id,
@@ -123,7 +127,12 @@ export async function getActiveReservation(userId: string) {
     .orderBy(desc(reservations.startTime))
     .limit(1);
 
-  return active[0] || null;
+  const result = active[0] || null;
+  if (result) {
+    await setActiveReservationCache(userId, result);
+  }
+
+  return result;
 }
 
 export async function validateQRToken(token: string, returnUrl?: string) {
@@ -160,6 +169,11 @@ export async function startSession(reservationId: string) {
     .where(eq(reservations.id, reservationId))
     .returning()
     .then((r) => r[0]);
+
+  if (response) {
+    await invalidateActiveReservationCache(response.userId);
+  }
+
   return response || null;
 }
 
@@ -177,6 +191,7 @@ export async function completeSession(reservationId: string) {
   if (response) {
     // Restore parking availability when session is completed
     await updateParkingAvailability(response.spotId, 1, 0);
+    await invalidateActiveReservationCache(response.userId);
   }
 
   return response || null;
@@ -193,7 +208,7 @@ export async function cancelReservation(reservationId: string) {
     if (!reservation) return null;
 
     const now = new Date();
-    const createdAt = new Date(reservation.createdAt);
+    const createdAt = reservation.createdAt ? new Date(reservation.createdAt) : now;
     const isWithinRefundWindow =
       reservation.status === "RESERVED" &&
       now.getTime() - createdAt.getTime() <= 15 * 60 * 1000;
@@ -214,6 +229,7 @@ export async function cancelReservation(reservationId: string) {
 
     // Increment available slots on cancellation
     await updateParkingAvailability(cancelled.spotId, 1, 0);
+    await invalidateActiveReservationCache(cancelled.userId);
 
     return {
       ...cancelled,
@@ -245,7 +261,11 @@ export async function extendReservation(
     .update(reservations)
     .set({ endTime: newEndTime })
     .where(eq(reservations.id, reservationId))
-    .returning();
+    .returning()
+    .then(async (r) => {
+        if (r[0]) await invalidateActiveReservationCache(r[0].userId);
+        return r;
+    });
 
   return true;
 }

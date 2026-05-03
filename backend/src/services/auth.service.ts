@@ -6,6 +6,8 @@ import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 import { wallets } from "../schema/wallets";
 
+import { getCachedUser, setuserCache } from "./cache/user-cache";
+
 import Decimal from "decimal.js";
 
 export async function registerAndSetupUser(
@@ -49,6 +51,11 @@ export async function registerAndSetupUser(
       .values({ userId: user.id, expiresAt })
       .returning();
 
+    if (user) {
+      const { passwordHash, ...userWithoutPassword } = user;
+      await setuserCache(user.id, userWithoutPassword);
+    }
+
     return { user, sessionId: sessionArr[0].id };
   });
 
@@ -76,9 +83,18 @@ export async function findUserByEmail(email: string) {
 }
 
 export async function findUserById(userId: string) {
-  const user = await db.select().from(users).where(eq(users.id, userId));
+  const cache = await getCachedUser(userId)
 
-  return user[0] ?? null;
+  if(cache) return cache
+
+  const user = await db.select().from(users).where(eq(users.id, userId)).then(r => r[0]);
+
+  if (user) {
+    const { passwordHash, ...userWithoutPassword } = user;
+    await setuserCache(userId, userWithoutPassword);
+  }
+
+  return user ?? null;
 }
 
 export async function validateUser(email: string, password: string) {
