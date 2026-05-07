@@ -33,4 +33,4 @@ app.get('/', async (req, res) => {
   res.send('Hello from ParkAddis')
 })
 
-app.listen(process.env.PORT, () => console.log(`listening...`))
+app.listen(process.env.PORT, () => console.log(`listening for parkaddis backend...`))
