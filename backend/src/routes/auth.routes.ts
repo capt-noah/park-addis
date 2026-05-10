@@ -73,9 +73,9 @@ authRouter.post(
     try {
       console.log("[AUTH] POST /login - Login attempt from:", req.body.email);
       const { email, password } = req.body;
-      const user = await validateUser(email, password);
+      const validationResult = await validateUser(email, password);
 
-      if (!user) {
+      if (!validationResult) {
         console.log(
           "[AUTH] POST /login - Invalid credentials for email:",
           email,
@@ -83,7 +83,7 @@ authRouter.post(
         return res.status(401).json({ error: "Invalid Credentials" });
       }
 
-      const sessionId = await createSession(user.id);
+      const sessionId = await createSession(validationResult.entity.id, validationResult.type);
 
       res.cookie("sessionId", sessionId, {
         httpOnly: true,
@@ -92,7 +92,7 @@ authRouter.post(
       });
 
       console.log("[AUTH] POST /login - User logged in successfully:", email);
-      return res.status(200).json({ user, sessionId });
+      return res.status(200).json({ user: validationResult.entity, sessionId });
     } catch (error: any) {
       console.log("[AUTH] POST /login - Login Error:", error.message);
       return res
@@ -113,12 +113,8 @@ authRouter.get("/me", authMiddleware, async (req, res) => {
     }
 
     console.log("[AUTH] GET /me - User info retrieved for:", user.email);
-    return res.status(200).json({
-      userId: user.id,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-    });
+    // User already has passwordHash stripped from auth service
+    return res.status(200).json(user);
   } catch (error: any) {
     console.log("[AUTH] GET /me - Error:", error.message);
     return res

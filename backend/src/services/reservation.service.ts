@@ -135,7 +135,7 @@ export async function getActiveReservation(userId: string) {
   return result;
 }
 
-export async function validateQRToken(token: string, returnUrl?: string) {
+export async function validateQRToken(token: string, returnUrl?: string, employeeId?: string) {
   const response = await db
     .select()
     .from(reservations)
@@ -147,9 +147,9 @@ export async function validateQRToken(token: string, returnUrl?: string) {
   if (!reservation) throw new Error("Invalid QR Token");
 
   if (reservation.status === "RESERVED") {
-    return await startSession(reservation.id);
+    return await startSession(reservation.id, employeeId);
   } else if (reservation.status === "ACTIVE") {
-    return await completeSession(reservation.id);
+    return await completeSession(reservation.id, employeeId);
     // return await createPayment(token)
   } else if (reservation.status === "COMPLETED") {
     if (!reservation.actualStartTime || !reservation.actualEndTime) return null;
@@ -159,13 +159,16 @@ export async function validateQRToken(token: string, returnUrl?: string) {
   }
 }
 
-export async function startSession(reservationId: string) {
+export async function startSession(reservationId: string, employeeId?: string) {
+  const updateData: any = {
+    status: "ACTIVE",
+    actualStartTime: new Date(),
+  };
+  if (employeeId) updateData.processedByEmployeeId = employeeId;
+
   const response = await db
     .update(reservations)
-    .set({
-      status: "ACTIVE",
-      actualStartTime: new Date(),
-    })
+    .set(updateData)
     .where(eq(reservations.id, reservationId))
     .returning()
     .then((r) => r[0]);
@@ -177,13 +180,16 @@ export async function startSession(reservationId: string) {
   return response || null;
 }
 
-export async function completeSession(reservationId: string) {
+export async function completeSession(reservationId: string, employeeId?: string) {
+  const updateData: any = {
+    status: "COMPLETED",
+    actualEndTime: new Date(),
+  };
+  if (employeeId) updateData.processedByEmployeeId = employeeId;
+
   const response = await db
     .update(reservations)
-    .set({
-      status: "COMPLETED",
-      actualEndTime: new Date(),
-    })
+    .set(updateData)
     .where(eq(reservations.id, reservationId))
     .returning()
     .then((r) => r[0]);

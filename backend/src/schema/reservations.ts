@@ -2,6 +2,7 @@ import { pgTable, uuid, uniqueIndex, timestamp, text } from "drizzle-orm/pg-core
 import { users } from "./users"
 import { parkingSpots } from "./parkingSpots"
 import { vehicles } from "./vehicles"
+import { employees } from "./employees"
 
 export const reservations = pgTable(
     "reservations",
@@ -16,6 +17,7 @@ export const reservations = pgTable(
         actualEndTime: timestamp("actual_end_time"),
         status: text("status").notNull().default("RESERVED"),
         qrToken: text("qr_token").notNull().unique(),
+        processedByEmployeeId: uuid("processed_by_employee_id").references(() => employees.id, { onDelete: 'set null' }),
         createdAt: timestamp("created_at").defaultNow().notNull()
     },
     (table) => ({

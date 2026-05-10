@@ -195,13 +195,13 @@ reservationRouter.post("/cancel", async (req, res) => {
   }
 });
 
-// 5. Validation and Session Management
-reservationRouter.post("/validate", async (req, res) => {
+reservationRouter.post("/validate", authMiddleware, async (req, res) => {
   try {
     const { qrToken } = req.body;
-    console.log("[RESERVATION] POST /validate - Validating QR token");
+    const employeeId = res.locals.user?.id;
+    console.log("[RESERVATION] POST /validate - Validating QR token by employee:", employeeId);
 
-    const response = await validateQRToken(qrToken);
+    const response = await validateQRToken(qrToken, undefined, employeeId);
     if (!response) {
       console.log("[RESERVATION] POST /validate - Invalid QR token");
       return res.status(401).json({ error: "Invalid Token" });
@@ -215,12 +215,13 @@ reservationRouter.post("/validate", async (req, res) => {
   }
 });
 
-reservationRouter.post("/start", async (req, res) => {
+reservationRouter.post("/start", authMiddleware, async (req, res) => {
   try {
     const { reservationId } = req.body;
+    const employeeId = res.locals.user?.id;
     console.log("[RESERVATION] POST /start - Starting session for reservation:", reservationId);
 
-    const response = await startSession(reservationId);
+    const response = await startSession(reservationId, employeeId);
     if (!response) {
       console.log("[RESERVATION] POST /start - Unable to start session:", reservationId);
       return res.status(401).json({ error: "Unable to Start Session" });
@@ -234,12 +235,13 @@ reservationRouter.post("/start", async (req, res) => {
   }
 });
 
-reservationRouter.post("/complete", async (req, res) => {
+reservationRouter.post("/complete", authMiddleware, async (req, res) => {
   try {
     const { reservationId } = req.body;
+    const employeeId = res.locals.user?.id;
     console.log("[RESERVATION] POST /complete - Completing session for reservation:", reservationId);
 
-    const response = await completeSession(reservationId);
+    const response = await completeSession(reservationId, employeeId);
     if (!response) {
       console.log("[RESERVATION] POST /complete - Unable to complete session:", reservationId);
       return res.status(401).json({ error: "Unable to Complete Session" });

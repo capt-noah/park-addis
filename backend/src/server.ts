@@ -9,6 +9,8 @@ import reservationRouter from "./routes/reservation.routes";
 import paymentRouter from "./routes/payment.routes"
 import walletRouter from "./routes/wallet.routes";
 import vehicleRouter from "./routes/vehicle.routes";
+import clerkRouter from "./routes/clerk.routes";
+import adminRouter from "./routes/admin.routes";
 
 app.use(cors({
   origin: ["http://localhost:3000", "https://park-addis.vercel.app"],
@@ -29,6 +31,8 @@ app.use('/api/reservation', reservationRouter)
 app.use('/api/payment', paymentRouter)
 app.use('/api/wallet', walletRouter)
 app.use('/api/vehicle', vehicleRouter)
+app.use('/api/clerk', clerkRouter)
+app.use('/api/admin', adminRouter)
 
 app.get('/', async (req, res) => {
   res.send('Hello from ParkAddis')

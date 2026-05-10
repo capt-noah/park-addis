@@ -43,3 +43,8 @@ chapa_mobile_integration.md
 .gitignore
 backend/backend_api_docs2.md
 BACKEND_UPDATES.md
+docs/admin_dashboard_integration_guide.md
+.gitignore
+docs/clerk_app_integration_guide.md
+docs/admin_frontend_prompt.md
+backend/test/loadtest.js

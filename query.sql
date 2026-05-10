@@ -5,6 +5,7 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     phone_number TEXT UNIQUE NOT NULL,
     role TEXT DEFAULT 'user',
+    is_active TEXT DEFAULT 'true',
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -14,9 +15,11 @@ CREATE TABLE employees (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     phone_number TEXT UNIQUE NOT NULL,
-    status TEXT 
-        CHECK(status in ('ACTIVE', 'ON_BREAK'))
+    status TEXT DEFAULT 'ACTIVE' CHECK(status in ('ACTIVE', 'ON_BREAK')),
     role TEXT DEFAULT 'employee',
+    assigned_location_id UUID REFERENCES parking_locations(id) ON DELETE SET NULL,
+    shift_start_time TIME,
+    shift_end_time TIME,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -42,7 +45,9 @@ CREATE TABLE vehicles (
 
 CREATE TABLE sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+    admin_id UUID REFERENCES admins(id) ON DELETE CASCADE,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -68,7 +73,7 @@ CREATE TABLE parking_spots (
     price_per_hour NUMERIC(10,2) NOT NULL,
     total_slots INTEGER NOT NULL,
     available_slots INTEGER NOT NULL,
-    updated_at TIMESTAMPTZ DEFAULT NOW
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
     active BOOLEAN DEFAULT TRUE
 );
 
@@ -84,6 +89,7 @@ CREATE TABLE reservations (
     status TEXT NOT NULL DEFAULT 'RESERVED'
         CHECK (status IN ('RESERVED','ACTIVE','COMPLETED','PAID','CANCELLED','EXPIRED')),
     qr_token TEXT UNIQUE NOT NULL,
+    processed_by_employee_id UUID REFERENCES employees(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -105,7 +111,7 @@ CREATE TABLE wallets (
         CHECK (status IN ('ACTIVE', 'FROZEN')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
-)
+);
 
 CREATE TABLE wallet_transactions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -118,7 +124,7 @@ CREATE TABLE wallet_transactions (
     reference_id UUID NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     completed_at TIMESTAMPTZ DEFAULT NOW()
-)
+);
 
 CREATE TABLE reservation_payments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -126,8 +132,13 @@ CREATE TABLE reservation_payments (
     wallet_transaction_id UUID REFERENCES wallet_transactions(id) ON DELETE CASCADE,
     amount DECIMAL(12, 2) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
-)
+);
 
+CREATE INDEX idx_sessions_employee_id ON sessions(employee_id);
+CREATE INDEX idx_sessions_admin_id ON sessions(admin_id);
+CREATE INDEX idx_employees_location_id ON employees(assigned_location_id);
 CREATE INDEX idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX idx_reservations_user_id ON reservations(user_id);
 CREATE INDEX idx_reservations_spot_id ON reservations(spot_id);
+CREATE INDEX idx_reservations_status ON reservations(status);
+

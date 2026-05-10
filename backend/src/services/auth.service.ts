@@ -5,6 +5,8 @@ import { db } from "../db";
 import bcrypt from "bcrypt";
 import { eq } from "drizzle-orm";
 import { wallets } from "../schema/wallets";
+import { employees } from "../schema/employees";
+import { admins } from "../schema/admins";
 
 import { getCachedUser, setuserCache } from "./cache/user-cache";
 
@@ -78,7 +80,6 @@ export async function registerVehicle(
 
 export async function findUserByEmail(email: string) {
   const user = await db.select().from(users).where(eq(users.email, email));
-
   return user[0] ?? null;
 }
 
@@ -98,20 +99,41 @@ export async function findUserById(userId: string) {
 }
 
 export async function validateUser(email: string, password: string) {
-  const user = await findUserByEmail(email);
+  // Check users table
+  let user = await findUserByEmail(email);
+  if (user) {
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (isValid) return { entity: user, type: 'user' };
+  }
 
-  if (!user) return false;
+  // Check employees table
+  let employee = await db.select().from(employees).where(eq(employees.email, email)).then(r => r[0]);
+  if (employee) {
+    const isValid = await bcrypt.compare(password, employee.passwordHash);
+    if (isValid) return { entity: employee, type: 'employee' };
+  }
 
-  const isValid = await bcrypt.compare(password, user.passwordHash);
+  // Check admins table
+  let admin = await db.select().from(admins).where(eq(admins.email, email)).then(r => r[0]);
+  if (admin) {
+    const isValid = await bcrypt.compare(password, admin.passwordHash);
+    if (isValid) return { entity: admin, type: 'admin' };
+  }
 
-  return isValid ? user : false;
+  return false;
 }
 
-export async function createSession(userId: string) {
+export async function createSession(id: string, type: 'user' | 'employee' | 'admin' = 'user') {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  
+  const payload: any = { expiresAt };
+  if (type === 'user') payload.userId = id;
+  else if (type === 'employee') payload.employeeId = id;
+  else if (type === 'admin') payload.adminId = id;
+
   const session = await db
     .insert(sessions)
-    .values({ userId, expiresAt })
+    .values(payload)
     .returning();
 
   return session[0].id;
@@ -119,7 +141,6 @@ export async function createSession(userId: string) {
 
 export async function deleteSession(sessionId: string) {
   const isDeleted = await db.delete(sessions).where(eq(sessions.id, sessionId));
-
   return isDeleted ?? false;
 }
 
@@ -137,9 +158,22 @@ export async function findUserBySession(id: string) {
 
   if (!userSession) return false;
 
-  const user = await findUserById(userSession.userId);
+  if (userSession.userId) {
+    const user = await findUserById(userSession.userId);
+    return user ? { ...user, userType: 'user' } : false;
+  } else if (userSession.employeeId) {
+    const employee = await db.select().from(employees).where(eq(employees.id, userSession.employeeId)).then(r => r[0]);
+    if (employee) {
+        const { passwordHash, ...employeeWithoutPassword } = employee;
+        return { ...employeeWithoutPassword, userType: 'employee' };
+    }
+  } else if (userSession.adminId) {
+    const admin = await db.select().from(admins).where(eq(admins.id, userSession.adminId)).then(r => r[0]);
+    if (admin) {
+        const { passwordHash, ...adminWithoutPassword } = admin;
+        return { ...adminWithoutPassword, userType: 'admin' };
+    }
+  }
 
-  if (!user) return false;
-
-  return user;
+  return false;
 }
