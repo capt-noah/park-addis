@@ -8,6 +8,8 @@ import { admins } from "../schema/admins";
 import { reservations } from "../schema/reservations";
 import { payments } from "../schema/payments";
 import { parkingLocations } from "../schema/parkingLocations";
+import { parkingSpots } from "../schema/parkingSpots";
+import { vehicles } from "../schema/vehicles";
 import { adminNotifications } from "../schema/adminNotifications";
 import { eq, desc, count, sum, sql, and, ilike, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -166,11 +168,31 @@ adminRouter.get("/reservations", async (req, res) => {
   try {
     const statusFilter = req.query.status as string;
     
-    let query = db.select().from(reservations).orderBy(desc(reservations.createdAt));
+    let query = db.select({
+      id: reservations.id,
+      userId: reservations.userId,
+      userFullName: users.fullName,
+      vehicleId: reservations.vehicleId,
+      vehicleType: vehicles.carModel,
+      vehiclePlate: vehicles.plateNumber,
+      startTime: reservations.startTime,
+      endTime: reservations.endTime,
+      status: reservations.status,
+      locationName: parkingLocations.name,
+      processedByEmployeeName: employees.fullName,
+      createdAt: reservations.createdAt
+    })
+    .from(reservations)
+    .leftJoin(users, eq(reservations.userId, users.id))
+    .leftJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
+    .leftJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
+    .leftJoin(parkingLocations, eq(parkingSpots.locationId, parkingLocations.id))
+    .leftJoin(employees, eq(reservations.processedByEmployeeId, employees.id))
+    .orderBy(desc(reservations.createdAt))
+    .$dynamic();
     
     if (statusFilter) {
-      // @ts-ignore
-      query = db.select().from(reservations).where(eq(reservations.status, statusFilter)).orderBy(desc(reservations.createdAt));
+      query = query.where(eq(reservations.status, statusFilter as any));
     }
 
     const allReservations = await query.limit(100);
