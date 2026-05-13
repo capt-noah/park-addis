@@ -64,6 +64,49 @@ export async function registerAndSetupUser(
   return result;
 }
 
+export async function registerEmployee(
+  fullName: string,
+  email: string,
+  password: string,
+  phoneNumber: string,
+  assignedLocationId?: string,
+  shiftStartTime?: string,
+  shiftEndTime?: string,
+) {
+  const passwordHash = await bcrypt.hash(password, 10);
+  const employeeArr = await db
+    .insert(employees)
+    .values({ 
+        fullName, 
+        email, 
+        passwordHash, 
+        phoneNumber, 
+        assignedLocationId, 
+        shiftStartTime, 
+        shiftEndTime,
+        role: 'employee',
+        status: 'ACTIVE'
+    })
+    .returning();
+  
+  return employeeArr[0];
+}
+
+export async function registerAdmin(
+  fullName: string,
+  email: string,
+  password: string,
+  phoneNumber: string,
+) {
+  const passwordHash = await bcrypt.hash(password, 10);
+  const adminArr = await db
+    .insert(admins)
+    .values({ fullName, email, passwordHash, phoneNumber, role: 'admin' })
+    .returning();
+  
+  return adminArr[0];
+}
+
 export async function registerVehicle(
   userId: string,
   plateNumber: string,
@@ -98,27 +141,41 @@ export async function findUserById(userId: string) {
   return user ?? null;
 }
 
+/**
+ * Validates a Driver/Standard User. ONLY checks the 'users' table.
+ */
 export async function validateUser(email: string, password: string) {
-  // Check users table
-  let user = await findUserByEmail(email);
-  if (user) {
-    const isValid = await bcrypt.compare(password, user.passwordHash);
-    if (isValid) return { entity: user, type: 'user' };
-  }
+  const user = await findUserByEmail(email);
+  if (!user) return false;
 
-  // Check employees table
-  let employee = await db.select().from(employees).where(eq(employees.email, email)).then(r => r[0]);
-  if (employee) {
-    const isValid = await bcrypt.compare(password, employee.passwordHash);
-    if (isValid) return { entity: employee, type: 'employee' };
-  }
+  const isValid = await bcrypt.compare(password, user.passwordHash);
+  if (isValid) return { entity: user, type: 'user' as const };
 
-  // Check admins table
-  let admin = await db.select().from(admins).where(eq(admins.email, email)).then(r => r[0]);
-  if (admin) {
-    const isValid = await bcrypt.compare(password, admin.passwordHash);
-    if (isValid) return { entity: admin, type: 'admin' };
-  }
+  return false;
+}
+
+/**
+ * Validates an Employee/Clerk. ONLY checks the 'employees' table.
+ */
+export async function validateEmployee(email: string, password: string) {
+  const employee = await db.select().from(employees).where(eq(employees.email, email)).then(r => r[0]);
+  if (!employee) return false;
+
+  const isValid = await bcrypt.compare(password, employee.passwordHash);
+  if (isValid) return { entity: employee, type: 'employee' as const };
+
+  return false;
+}
+
+/**
+ * Validates a System Admin. ONLY checks the 'admins' table.
+ */
+export async function validateAdmin(email: string, password: string) {
+  const admin = await db.select().from(admins).where(eq(admins.email, email)).then(r => r[0]);
+  if (!admin) return false;
+
+  const isValid = await bcrypt.compare(password, admin.passwordHash);
+  if (isValid) return { entity: admin, type: 'admin' as const };
 
   return false;
 }

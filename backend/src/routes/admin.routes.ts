@@ -12,9 +12,55 @@ import { adminNotifications } from "../schema/adminNotifications";
 import { eq, desc, count, sum, sql, and, ilike, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import { validateAdmin, createSession, registerAdmin } from "../services/auth.service";
 
 const adminRouter = express.Router();
 
+// --- 0. Admin Authentication (Public) ---
+
+adminRouter.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await validateAdmin(email, password);
+
+    if (!result) {
+      return res.status(401).json({ error: "Invalid Admin Credentials" });
+    }
+
+    const sessionId = await createSession(result.entity.id, "admin");
+
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res.status(200).json({ user: result.entity, sessionId });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+adminRouter.post("/register", async (req, res) => {
+  try {
+    const { fullName, email, password, phoneNumber } = req.body;
+    const newAdmin = await registerAdmin(fullName, email, password, phoneNumber);
+    
+    const sessionId = await createSession(newAdmin.id, "admin");
+
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res.status(201).json({ user: newAdmin, sessionId });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Authenticated Routes ---
 adminRouter.use(authMiddleware);
 adminRouter.use(isAdmin);
 

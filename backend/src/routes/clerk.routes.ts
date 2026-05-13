@@ -1,7 +1,7 @@
 import express from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { isClerk } from "../middleware/role.middleware";
-import { registerAndSetupUser, findUserByEmail } from "../services/auth.service";
+import { registerAndSetupUser, validateEmployee, createSession, registerEmployee } from "../services/auth.service";
 import { reserveSpot } from "../services/reservation.service";
 import crypto from "crypto";
 import { db } from "../db";
@@ -12,6 +12,51 @@ import { payments } from "../schema/payments";
 
 const clerkRouter = express.Router();
 
+// --- 0. Clerk Authentication (Public) ---
+
+clerkRouter.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const result = await validateEmployee(email, password);
+
+    if (!result) {
+      return res.status(401).json({ error: "Invalid Clerk Credentials" });
+    }
+
+    const sessionId = await createSession(result.entity.id, "employee");
+
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res.status(200).json({ user: result.entity, sessionId });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+clerkRouter.post("/register", async (req, res) => {
+  try {
+    const { fullName, email, password, phoneNumber, assignedLocationId, shiftStartTime, shiftEndTime } = req.body;
+    const newEmployee = await registerEmployee(fullName, email, password, phoneNumber, assignedLocationId, shiftStartTime, shiftEndTime);
+    
+    const sessionId = await createSession(newEmployee.id, "employee");
+
+    res.cookie("sessionId", sessionId, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res.status(201).json({ user: newEmployee, sessionId });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// --- Authenticated Routes ---
 clerkRouter.use(authMiddleware);
 clerkRouter.use(isClerk);
 
@@ -25,7 +70,6 @@ clerkRouter.post("/register-walkin", async (req, res) => {
     }
 
     // Generate a placeholder email and password for walk-ins
-    // The user can later "claim" this account using their phone number
     const email = `walkin_${Date.now()}@parkaddis.local`;
     const password = crypto.randomBytes(8).toString('hex');
 
@@ -44,7 +88,6 @@ clerkRouter.post("/register-walkin", async (req, res) => {
       return res.status(400).json({ error: "Failed to register walk-in user" });
     }
 
-    // Return the user so the clerk can proceed to create a reservation
     return res.status(201).json({ 
         message: "Walk-in registered successfully", 
         user: result.user 
@@ -69,7 +112,6 @@ clerkRouter.post("/create-reservation", async (req, res) => {
         return res.status(400).json({ error: "Clerk does not have an assigned location to create reservations in" });
     }
 
-    // Find an available spot in the clerk's assigned location
     const availableSpot = await db.select().from(parkingSpots)
         .where(eq(parkingSpots.locationId, clerkProfile.assignedLocationId))
         .limit(1)
@@ -79,9 +121,7 @@ clerkRouter.post("/create-reservation", async (req, res) => {
         return res.status(400).json({ error: "No spots found for this location" });
     }
 
-    // Create immediate reservation
     const startTime = new Date();
-    // Default to 1 hour for walk-ins, they can extend or pay overtime later
     const endTime = new Date(Date.now() + 60 * 60 * 1000); 
 
     const reservation = await reserveSpot(userId, availableSpot.id, vehicleId, startTime, endTime);
@@ -121,7 +161,6 @@ clerkRouter.post("/verify-payment", async (req, res) => {
             return res.status(404).json({ error: "Reservation not found" });
         }
 
-        // Fetch payment
         const payment = await db.select().from(payments).where(eq(payments.reservationId, reservation.id)).limit(1).then(r => r[0]);
 
         return res.status(200).json({
