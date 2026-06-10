@@ -39,12 +39,10 @@ export async function registerAndSetupUser(
         .values({ userId: user.id, plateNumber, carModel, color })
         .returning();
     }
-    
+
     // 3. Create Wallet
-    const balance = new Decimal('0').toString()
-    await tx.insert(wallets)
-            .values({userId: user.id, balance})
-            .returning();
+    const balance = new Decimal("0").toString();
+    await tx.insert(wallets).values({ userId: user.id, balance }).returning();
 
     // 4. Create Session
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -76,19 +74,19 @@ export async function registerEmployee(
   const passwordHash = await bcrypt.hash(password, 10);
   const employeeArr = await db
     .insert(employees)
-    .values({ 
-        fullName, 
-        email, 
-        passwordHash, 
-        phoneNumber, 
-        assignedLocationId, 
-        shiftStartTime, 
-        shiftEndTime,
-        role: 'employee',
-        status: 'ACTIVE'
+    .values({
+      fullName,
+      email,
+      passwordHash,
+      phoneNumber,
+      assignedLocationId,
+      shiftStartTime,
+      shiftEndTime,
+      role: "employee",
+      status: "ACTIVE",
     })
     .returning();
-  
+
   return employeeArr[0];
 }
 
@@ -101,9 +99,9 @@ export async function registerAdmin(
   const passwordHash = await bcrypt.hash(password, 10);
   const adminArr = await db
     .insert(admins)
-    .values({ fullName, email, passwordHash, phoneNumber, role: 'admin' })
+    .values({ fullName, email, passwordHash, phoneNumber, role: "admin" })
     .returning();
-  
+
   return adminArr[0];
 }
 
@@ -126,12 +124,33 @@ export async function findUserByEmail(email: string) {
   return user[0] ?? null;
 }
 
+export async function findUserByPhone(phoneNumber: string) {
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.phoneNumber, phoneNumber));
+  return user[0] ?? null;
+}
+
+export async function findUserByEmailOrPhone(payload: {
+  email?: string;
+  phoneNumber?: string;
+}) {
+  if (payload.email) return findUserByEmail(payload.email);
+  if (payload.phoneNumber) return findUserByPhone(payload.phoneNumber);
+  return null;
+}
+
 export async function findUserById(userId: string) {
-  const cache = await getCachedUser(userId)
+  const cache = await getCachedUser(userId);
 
-  if(cache) return cache
+  if (cache) return cache;
 
-  const user = await db.select().from(users).where(eq(users.id, userId)).then(r => r[0]);
+  const user = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .then((r) => r[0]);
 
   if (user) {
     const { passwordHash, ...userWithoutPassword } = user;
@@ -149,7 +168,7 @@ export async function validateUser(email: string, password: string) {
   if (!user) return false;
 
   const isValid = await bcrypt.compare(password, user.passwordHash);
-  if (isValid) return { entity: user, type: 'user' as const };
+  if (isValid) return { entity: user, type: "user" as const };
 
   return false;
 }
@@ -158,11 +177,15 @@ export async function validateUser(email: string, password: string) {
  * Validates an Employee/Clerk. ONLY checks the 'employees' table.
  */
 export async function validateEmployee(email: string, password: string) {
-  const employee = await db.select().from(employees).where(eq(employees.email, email)).then(r => r[0]);
+  const employee = await db
+    .select()
+    .from(employees)
+    .where(eq(employees.email, email))
+    .then((r) => r[0]);
   if (!employee) return false;
 
   const isValid = await bcrypt.compare(password, employee.passwordHash);
-  if (isValid) return { entity: employee, type: 'employee' as const };
+  if (isValid) return { entity: employee, type: "employee" as const };
 
   return false;
 }
@@ -171,27 +194,31 @@ export async function validateEmployee(email: string, password: string) {
  * Validates a System Admin. ONLY checks the 'admins' table.
  */
 export async function validateAdmin(email: string, password: string) {
-  const admin = await db.select().from(admins).where(eq(admins.email, email)).then(r => r[0]);
+  const admin = await db
+    .select()
+    .from(admins)
+    .where(eq(admins.email, email))
+    .then((r) => r[0]);
   if (!admin) return false;
 
   const isValid = await bcrypt.compare(password, admin.passwordHash);
-  if (isValid) return { entity: admin, type: 'admin' as const };
+  if (isValid) return { entity: admin, type: "admin" as const };
 
   return false;
 }
 
-export async function createSession(id: string, type: 'user' | 'employee' | 'admin' = 'user') {
+export async function createSession(
+  id: string,
+  type: "user" | "employee" | "admin" = "user",
+) {
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  
-  const payload: any = { expiresAt };
-  if (type === 'user') payload.userId = id;
-  else if (type === 'employee') payload.employeeId = id;
-  else if (type === 'admin') payload.adminId = id;
 
-  const session = await db
-    .insert(sessions)
-    .values(payload)
-    .returning();
+  const payload: any = { expiresAt };
+  if (type === "user") payload.userId = id;
+  else if (type === "employee") payload.employeeId = id;
+  else if (type === "admin") payload.adminId = id;
+
+  const session = await db.insert(sessions).values(payload).returning();
 
   return session[0].id;
 }
@@ -217,18 +244,26 @@ export async function findUserBySession(id: string) {
 
   if (userSession.userId) {
     const user = await findUserById(userSession.userId);
-    return user ? { ...user, userType: 'user' } : false;
+    return user ? { ...user, userType: "user" } : false;
   } else if (userSession.employeeId) {
-    const employee = await db.select().from(employees).where(eq(employees.id, userSession.employeeId)).then(r => r[0]);
+    const employee = await db
+      .select()
+      .from(employees)
+      .where(eq(employees.id, userSession.employeeId))
+      .then((r) => r[0]);
     if (employee) {
-        const { passwordHash, ...employeeWithoutPassword } = employee;
-        return { ...employeeWithoutPassword, userType: 'employee' };
+      const { passwordHash, ...employeeWithoutPassword } = employee;
+      return { ...employeeWithoutPassword, userType: "employee" };
     }
   } else if (userSession.adminId) {
-    const admin = await db.select().from(admins).where(eq(admins.id, userSession.adminId)).then(r => r[0]);
+    const admin = await db
+      .select()
+      .from(admins)
+      .where(eq(admins.id, userSession.adminId))
+      .then((r) => r[0]);
     if (admin) {
-        const { passwordHash, ...adminWithoutPassword } = admin;
-        return { ...adminWithoutPassword, userType: 'admin' };
+      const { passwordHash, ...adminWithoutPassword } = admin;
+      return { ...adminWithoutPassword, userType: "admin" };
     }
   }
 
