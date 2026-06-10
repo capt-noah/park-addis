@@ -5,9 +5,10 @@ import { parkingLocations } from "../schema/parkingLocations";
 import { checkParkingAvailability, updateParkingAvailability } from "./parking.service";
 import { createPayment } from "./payment.service";
 import { vehicles } from "../schema/vehicles";
-import { eq, and, or, desc, inArray } from "drizzle-orm";
+import { eq, and, or, desc, inArray, ne } from "drizzle-orm";
 import crypto from "crypto";
 import { payments } from "../schema/payments";
+import { reservationPayments } from "../schema/reservationPayments";
 import { refundReservationFee } from "./wallet.service";
 import { getCachedActiveReservation, setActiveReservationCache, invalidateActiveReservationCache } from "./cache/reservation-cache";
 
@@ -48,6 +49,62 @@ export async function reserveSpot(
   return response;
 }
 
+/** Payment display status is derived only from reservations.status. */
+export function paymentStatusFromReservation(
+  reservationStatus: string | null | undefined,
+) {
+  return reservationStatus === "PAID" ? "PAID" : "PENDING";
+}
+
+function dedupeReservationRows<T extends Record<string, unknown>>(rows: T[]) {
+  const unique = new Map<string, T>();
+
+  for (const row of rows) {
+    const id = row.id as string;
+    if (!unique.has(id)) {
+      unique.set(id, row);
+    }
+  }
+
+  return Array.from(unique.values());
+}
+
+export async function getReservationPaymentInfo(reservationId: string) {
+  const reservation = await db
+    .select({ status: reservations.status })
+    .from(reservations)
+    .where(eq(reservations.id, reservationId))
+    .limit(1)
+    .then((r) => r[0]);
+
+  const paymentStatus = paymentStatusFromReservation(reservation?.status);
+
+  const gatewayPayment = await db
+    .select()
+    .from(payments)
+    .where(eq(payments.reservationId, reservationId))
+    .orderBy(desc(payments.createdAt))
+    .limit(1)
+    .then((r) => r[0]);
+
+  const walletPayment = await db
+    .select()
+    .from(reservationPayments)
+    .where(eq(reservationPayments.reservationId, reservationId))
+    .orderBy(desc(reservationPayments.createdAt))
+    .limit(1)
+    .then((r) => r[0]);
+
+  const amount =
+    gatewayPayment?.amount || walletPayment?.amount || "0.00";
+
+  return {
+    paymentStatus,
+    amount,
+    status: reservation?.status || "UNKNOWN",
+  };
+}
+
 export async function getUserReservations(userId: string) {
   const userReservations = await db
     .select({
@@ -66,7 +123,6 @@ export async function getUserReservations(userId: string) {
       plateNumber: vehicles.plateNumber,
       carModel: vehicles.carModel,
       carColor: vehicles.color,
-      paymentStatus: payments.status,
     })
     .from(reservations)
     .innerJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
@@ -75,18 +131,10 @@ export async function getUserReservations(userId: string) {
       eq(parkingSpots.locationId, parkingLocations.id),
     )
     .innerJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
-    .leftJoin(payments, eq(reservations.id, payments.reservationId))
     .where(eq(reservations.userId, userId))
-    .orderBy(desc(reservations.startTime), desc(payments.createdAt));
+    .orderBy(desc(reservations.startTime));
 
-  const uniqueReservations = new Map();
-  for (const row of userReservations) {
-    if (!uniqueReservations.has(row.id)) {
-      uniqueReservations.set(row.id, row);
-    }
-  }
-
-  return Array.from(uniqueReservations.values());
+  return userReservations.map(enrichReservationRow);
 }
 
 export class ClerkAccessError extends Error {
@@ -120,11 +168,7 @@ function enrichReservationRow<T extends Record<string, unknown>>(row: T) {
       ? `${durationHours}h ${durationMins}m`
       : `${durationMins}m`;
 
-  const rawPaymentStatus = row.paymentStatus as string | null;
-  const paymentStatus =
-    rawPaymentStatus === "SUCCESS"
-      ? "PAID"
-      : rawPaymentStatus || "PENDING";
+  const paymentStatus = paymentStatusFromReservation(row.status as string);
 
   return {
     ...row,
@@ -212,7 +256,13 @@ export async function getReservationsByLocationId(
   }
 
   if (filters?.paymentStatus) {
-    conditions.push(eq(payments.status, filters.paymentStatus));
+    const wantsPaid =
+      filters.paymentStatus === "PAID" || filters.paymentStatus === "SUCCESS";
+    conditions.push(
+      wantsPaid
+        ? eq(reservations.status, "PAID")
+        : ne(reservations.status, "PAID"),
+    );
   }
 
   const locationReservations = await db
@@ -233,7 +283,6 @@ export async function getReservationsByLocationId(
       plateNumber: vehicles.plateNumber,
       carModel: vehicles.carModel,
       carColor: vehicles.color,
-      paymentStatus: payments.status,
     })
     .from(reservations)
     .innerJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
@@ -242,18 +291,10 @@ export async function getReservationsByLocationId(
       eq(parkingSpots.locationId, parkingLocations.id),
     )
     .innerJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
-    .leftJoin(payments, eq(reservations.id, payments.reservationId))
     .where(and(...conditions))
-    .orderBy(desc(reservations.startTime), desc(payments.createdAt));
+    .orderBy(desc(reservations.startTime));
 
-  const uniqueReservations = new Map<string, Record<string, unknown>>();
-  for (const row of locationReservations) {
-    if (!uniqueReservations.has(row.id)) {
-      uniqueReservations.set(row.id, row);
-    }
-  }
-
-  return Array.from(uniqueReservations.values()).map(enrichReservationRow);
+  return dedupeReservationRows(locationReservations).map(enrichReservationRow);
 }
 
 export async function getActiveReservation(userId: string) {
@@ -273,7 +314,6 @@ export async function getActiveReservation(userId: string) {
       plateNumber: vehicles.plateNumber,
       carModel: vehicles.carModel,
       carColor: vehicles.color,
-      paymentStatus: payments.status,
     })
     .from(reservations)
     .innerJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
@@ -282,7 +322,6 @@ export async function getActiveReservation(userId: string) {
       eq(parkingSpots.locationId, parkingLocations.id),
     )
     .innerJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
-    .leftJoin(payments, eq(reservations.id, payments.reservationId))
     .where(
       and(
         eq(reservations.userId, userId),
@@ -295,12 +334,51 @@ export async function getActiveReservation(userId: string) {
     .orderBy(desc(reservations.startTime))
     .limit(1);
 
-  const result = active[0] || null;
+  const result = active[0] ? enrichReservationRow(active[0]) : null;
   if (result) {
     await setActiveReservationCache(userId, result);
   }
 
   return result;
+}
+
+export async function getLatestReservationForUserAtLocation(
+  userId: string,
+  locationId: string,
+) {
+  const latest = await db
+    .select({
+      id: reservations.id,
+      startTime: reservations.startTime,
+      endTime: reservations.endTime,
+      actualStartTime: reservations.actualStartTime,
+      actualEndTime: reservations.actualEndTime,
+      status: reservations.status,
+      qrToken: reservations.qrToken,
+      locationId: parkingSpots.locationId,
+      locationName: parkingLocations.name,
+      pricePerHour: parkingSpots.pricePerHour,
+      plateNumber: vehicles.plateNumber,
+      carModel: vehicles.carModel,
+      carColor: vehicles.color,
+    })
+    .from(reservations)
+    .innerJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
+    .innerJoin(
+      parkingLocations,
+      eq(parkingSpots.locationId, parkingLocations.id),
+    )
+    .innerJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
+    .where(
+      and(eq(reservations.userId, userId), eq(parkingSpots.locationId, locationId)),
+    )
+    .orderBy(desc(reservations.startTime))
+    .limit(1);
+
+  const result = latest[0];
+  if (!result) return null;
+
+  return enrichReservationRow(result);
 }
 
 export async function validateQRToken(

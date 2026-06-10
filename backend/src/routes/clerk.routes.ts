@@ -14,7 +14,9 @@ import {
   assertEmployeeCanAccessReservation,
   ClerkAccessError,
   getActiveReservation,
+  getLatestReservationForUserAtLocation,
   getLocationSpotStats,
+  getReservationPaymentInfo,
   getReservationsByLocationId,
   reserveSpot,
 } from "../services/reservation.service";
@@ -24,8 +26,6 @@ import { db } from "../db";
 import { parkingSpots } from "../schema/parkingSpots";
 import { eq } from "drizzle-orm";
 import { reservations } from "../schema/reservations";
-import { payments } from "../schema/payments";
-
 const clerkRouter = express.Router();
 
 // --- 0. Clerk Authentication (Public) ---
@@ -239,20 +239,30 @@ clerkRouter.get("/search-user", async (req, res) => {
     }
 
     const clerkProfile = res.locals.employee;
-    const activeReservation = (await getActiveReservation(user.id)) as {
-      id: string;
-      locationId?: string;
-      status?: string;
-      qrToken?: string;
-      plateNumber?: string;
-    } | null;
+    let reservation =
+      (await getActiveReservation(user.id)) as {
+        id: string;
+        locationId?: string;
+        status?: string;
+        qrToken?: string;
+        plateNumber?: string;
+        paymentStatus?: string;
+      } | null;
+
+    if (!reservation && clerkProfile.assignedLocationId) {
+      reservation = (await getLatestReservationForUserAtLocation(
+        user.id,
+        clerkProfile.assignedLocationId,
+      )) as typeof reservation;
+    }
+
     let locationMismatch = false;
 
     if (
-      activeReservation &&
+      reservation &&
       clerkProfile.assignedLocationId &&
-      activeReservation.locationId &&
-      activeReservation.locationId !== clerkProfile.assignedLocationId
+      reservation.locationId &&
+      reservation.locationId !== clerkProfile.assignedLocationId
     ) {
       console.log(
         "[CLERK] GET /search-user - Reservation location mismatch for user:",
@@ -266,13 +276,15 @@ clerkRouter.get("/search-user", async (req, res) => {
     console.log(
       "[CLERK] GET /search-user - User found:",
       user.id,
-      "activeReservation:",
-      activeReservation?.id || "none",
+      "reservation:",
+      reservation?.id || "none",
+      "status:",
+      reservation?.status || "none",
     );
 
     return res.status(200).json({
       user: safeUser,
-      activeReservation: locationMismatch ? null : activeReservation,
+      activeReservation: locationMismatch ? null : reservation,
       locationMismatch,
     });
   } catch (error: any) {
@@ -460,28 +472,24 @@ clerkRouter.post("/verify-payment", async (req, res) => {
       throw error;
     }
 
-    const payment = await db
-      .select()
-      .from(payments)
-      .where(eq(payments.reservationId, reservation.id))
-      .limit(1)
-      .then((r) => r[0]);
+    const paymentInfo = await getReservationPaymentInfo(reservation.id);
 
-    const paymentStatus = payment?.status || "PENDING";
     console.log(
       "[CLERK] POST /verify-payment - Reservation:",
       reservation.id,
+      "reservationStatus:",
+      paymentInfo.status,
       "paymentStatus:",
-      paymentStatus,
+      paymentInfo.paymentStatus,
       "amount:",
-      payment?.amount || "0.00",
+      paymentInfo.amount,
     );
 
     return res.status(200).json({
       reservationId: reservation.id,
-      status: reservation.status,
-      paymentStatus,
-      amount: payment?.amount || "0.00",
+      status: paymentInfo.status,
+      paymentStatus: paymentInfo.paymentStatus,
+      amount: paymentInfo.amount,
     });
   } catch (error: any) {
     console.log("[CLERK] POST /verify-payment - Error:", error.message);
