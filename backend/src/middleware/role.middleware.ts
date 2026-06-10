@@ -1,5 +1,47 @@
 import { Response, Request, NextFunction } from "express";
 
+const OVERLAP_MINS = 60;
+
+export function checkClerkShift(profile: {
+  shiftStartTime?: string | null;
+  shiftEndTime?: string | null;
+}): { ok: true } | { ok: false; error: string } {
+  if (!profile.shiftStartTime || !profile.shiftEndTime) {
+    return { ok: false, error: "Access Denied: No shifts assigned" };
+  }
+
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  const [startH, startM] = profile.shiftStartTime.split(":").map(Number);
+  const [endH, endM] = profile.shiftEndTime.split(":").map(Number);
+
+  const shiftStartMins = startH * 60 + startM;
+  let shiftEndMins = endH * 60 + endM;
+
+  if (shiftEndMins < shiftStartMins) {
+    shiftEndMins += 24 * 60;
+  }
+
+  let currentMins = currentHour * 60 + currentMinute;
+  if (shiftEndMins >= 24 * 60 && currentMins < shiftStartMins) {
+    currentMins += 24 * 60;
+  }
+
+  if (
+    currentMins < shiftStartMins - OVERLAP_MINS ||
+    currentMins > shiftEndMins + OVERLAP_MINS
+  ) {
+    return {
+      ok: false,
+      error: "Access Denied: Outside of active shift hours",
+    };
+  }
+
+  return { ok: true };
+}
+
 export async function isAdmin(req: Request, res: Response, next: NextFunction) {
   const user = res.locals.user;
   if (!user || user.userType !== "admin") {
@@ -22,43 +64,9 @@ export async function isClerk(req: Request, res: Response, next: NextFunction) {
   try {
     const profile = user;
 
-    if (!profile.shiftStartTime || !profile.shiftEndTime) {
-        return res.status(403).json({ error: "Access Denied: No shifts assigned" });
-    }
-
-    // Check shift hours with overlap
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    
-    // Simplistic string comparison for time: HH:MM:SS
-    // shiftStartTime example: "08:00:00"
-    const shiftStart = profile.shiftStartTime;
-    const shiftEnd = profile.shiftEndTime;
-
-    // To add overlap, let's parse time
-    const [startH, startM] = shiftStart.split(':').map(Number);
-    const [endH, endM] = shiftEnd.split(':').map(Number);
-
-    const shiftStartMins = startH * 60 + startM;
-    let shiftEndMins = endH * 60 + endM;
-    
-    if (shiftEndMins < shiftStartMins) {
-        // Shift crosses midnight
-        shiftEndMins += 24 * 60;
-    }
-
-    let currentMins = currentHour * 60 + currentMinute;
-    // If current time is past midnight and shift crosses midnight
-    if (shiftEndMins >= 24 * 60 && currentMins < shiftStartMins) {
-        currentMins += 24 * 60;
-    }
-
-    // Allow 60 mins before shift and 60 mins after shift for overlap
-    const OVERLAP_MINS = 60;
-
-    if (currentMins < shiftStartMins - OVERLAP_MINS || currentMins > shiftEndMins + OVERLAP_MINS) {
-        return res.status(403).json({ error: "Access Denied: Outside of active shift hours" });
+    const shiftCheck = checkClerkShift(profile);
+    if (!shiftCheck.ok) {
+      return res.status(403).json({ error: shiftCheck.error });
     }
 
     // Assign to res.locals.employee so routes know it's an employee

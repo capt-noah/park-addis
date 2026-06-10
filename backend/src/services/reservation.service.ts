@@ -5,7 +5,7 @@ import { parkingLocations } from "../schema/parkingLocations";
 import { checkParkingAvailability, updateParkingAvailability } from "./parking.service";
 import { createPayment } from "./payment.service";
 import { vehicles } from "../schema/vehicles";
-import { eq, and, or, desc } from "drizzle-orm";
+import { eq, and, or, desc, inArray } from "drizzle-orm";
 import crypto from "crypto";
 import { payments } from "../schema/payments";
 import { refundReservationFee } from "./wallet.service";
@@ -89,6 +89,173 @@ export async function getUserReservations(userId: string) {
   return Array.from(uniqueReservations.values());
 }
 
+export class ClerkAccessError extends Error {
+  code: "FORBIDDEN_LOCATION" | "NO_LOCATION";
+
+  constructor(
+    message: string,
+    code: "FORBIDDEN_LOCATION" | "NO_LOCATION",
+  ) {
+    super(message);
+    this.name = "ClerkAccessError";
+    this.code = code;
+  }
+}
+
+function enrichReservationRow(row: Record<string, unknown>) {
+  const start = (row.actualStartTime || row.startTime) as Date | string;
+  const end =
+    row.actualEndTime ||
+    (row.status === "ACTIVE" ? new Date() : row.endTime);
+
+  const durationMs =
+    new Date(end as Date | string).getTime() -
+    new Date(start as Date | string).getTime();
+  const hours = Math.max(0, durationMs / (1000 * 60 * 60));
+  const pricePerHour = parseFloat(String(row.pricePerHour || "0"));
+  const durationHours = Math.floor(hours);
+  const durationMins = Math.round((hours - durationHours) * 60);
+  const duration =
+    durationHours > 0
+      ? `${durationHours}h ${durationMins}m`
+      : `${durationMins}m`;
+
+  const rawPaymentStatus = row.paymentStatus as string | null;
+  const paymentStatus =
+    rawPaymentStatus === "SUCCESS"
+      ? "PAID"
+      : rawPaymentStatus || "PENDING";
+
+  return {
+    ...row,
+    duration,
+    accrued: (hours * pricePerHour).toFixed(2),
+    paymentStatus,
+  };
+}
+
+export async function getReservationLocationId(
+  reservationId: string,
+): Promise<string | null> {
+  const row = await db
+    .select({ locationId: parkingSpots.locationId })
+    .from(reservations)
+    .innerJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
+    .where(eq(reservations.id, reservationId))
+    .limit(1)
+    .then((r) => r[0]);
+
+  return row?.locationId ?? null;
+}
+
+export async function getReservationLocationIdByQrToken(
+  qrToken: string,
+): Promise<{ reservationId: string; locationId: string } | null> {
+  const row = await db
+    .select({
+      reservationId: reservations.id,
+      locationId: parkingSpots.locationId,
+    })
+    .from(reservations)
+    .innerJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
+    .where(eq(reservations.qrToken, qrToken))
+    .limit(1)
+    .then((r) => r[0]);
+
+  if (!row) return null;
+  return { reservationId: row.reservationId, locationId: row.locationId };
+}
+
+export async function assertEmployeeCanAccessReservation(
+  assignedLocationId: string | null | undefined,
+  reservationId: string,
+) {
+  if (!assignedLocationId) {
+    throw new ClerkAccessError(
+      "Clerk has no assigned location",
+      "NO_LOCATION",
+    );
+  }
+
+  const locationId = await getReservationLocationId(reservationId);
+  if (!locationId || locationId !== assignedLocationId) {
+    throw new ClerkAccessError(
+      "Forbidden: Reservation belongs to a different parking location",
+      "FORBIDDEN_LOCATION",
+    );
+  }
+}
+
+export async function getLocationSpotStats(locationId: string) {
+  const spots = await db
+    .select({
+      totalSlots: parkingSpots.totalSlots,
+      availableSlots: parkingSpots.availableSlots,
+    })
+    .from(parkingSpots)
+    .where(eq(parkingSpots.locationId, locationId));
+
+  return {
+    totalSlots: spots.reduce((acc, spot) => acc + spot.totalSlots, 0),
+    availableSlots: spots.reduce((acc, spot) => acc + spot.availableSlots, 0),
+  };
+}
+
+export async function getReservationsByLocationId(
+  locationId: string,
+  filters?: { statuses?: string[]; paymentStatus?: string },
+) {
+  const conditions = [eq(parkingSpots.locationId, locationId)];
+
+  if (filters?.statuses?.length) {
+    conditions.push(inArray(reservations.status, filters.statuses));
+  }
+
+  if (filters?.paymentStatus) {
+    conditions.push(eq(payments.status, filters.paymentStatus));
+  }
+
+  const locationReservations = await db
+    .select({
+      id: reservations.id,
+      startTime: reservations.startTime,
+      endTime: reservations.endTime,
+      actualStartTime: reservations.actualStartTime,
+      actualEndTime: reservations.actualEndTime,
+      status: reservations.status,
+      qrToken: reservations.qrToken,
+      createdAt: reservations.createdAt,
+      spotId: reservations.spotId,
+      locationId: parkingSpots.locationId,
+      locationName: parkingLocations.name,
+      locationAddress: parkingLocations.address,
+      pricePerHour: parkingSpots.pricePerHour,
+      plateNumber: vehicles.plateNumber,
+      carModel: vehicles.carModel,
+      carColor: vehicles.color,
+      paymentStatus: payments.status,
+    })
+    .from(reservations)
+    .innerJoin(parkingSpots, eq(reservations.spotId, parkingSpots.id))
+    .innerJoin(
+      parkingLocations,
+      eq(parkingSpots.locationId, parkingLocations.id),
+    )
+    .innerJoin(vehicles, eq(reservations.vehicleId, vehicles.id))
+    .leftJoin(payments, eq(reservations.id, payments.reservationId))
+    .where(and(...conditions))
+    .orderBy(desc(reservations.startTime), desc(payments.createdAt));
+
+  const uniqueReservations = new Map<string, Record<string, unknown>>();
+  for (const row of locationReservations) {
+    if (!uniqueReservations.has(row.id)) {
+      uniqueReservations.set(row.id, row);
+    }
+  }
+
+  return Array.from(uniqueReservations.values()).map(enrichReservationRow);
+}
+
 export async function getActiveReservation(userId: string) {
   const cache = await getCachedActiveReservation(userId);
   if (cache) return cache;
@@ -100,6 +267,7 @@ export async function getActiveReservation(userId: string) {
       endTime: reservations.endTime,
       status: reservations.status,
       qrToken: reservations.qrToken,
+      locationId: parkingSpots.locationId,
       locationName: parkingLocations.name,
       pricePerHour: parkingSpots.pricePerHour,
       plateNumber: vehicles.plateNumber,
@@ -135,7 +303,12 @@ export async function getActiveReservation(userId: string) {
   return result;
 }
 
-export async function validateQRToken(token: string, returnUrl?: string, employeeId?: string) {
+export async function validateQRToken(
+  token: string,
+  returnUrl?: string,
+  employeeId?: string,
+  assignedLocationId?: string,
+) {
   const response = await db
     .select()
     .from(reservations)
@@ -146,10 +319,17 @@ export async function validateQRToken(token: string, returnUrl?: string, employe
   const reservation = response;
   if (!reservation) throw new Error("Invalid QR Token");
 
+  if (employeeId && assignedLocationId) {
+    await assertEmployeeCanAccessReservation(
+      assignedLocationId,
+      reservation.id,
+    );
+  }
+
   if (reservation.status === "RESERVED") {
-    return await startSession(reservation.id, employeeId);
+    return await startSession(reservation.id, employeeId, assignedLocationId);
   } else if (reservation.status === "ACTIVE") {
-    return await completeSession(reservation.id, employeeId);
+    return await completeSession(reservation.id, employeeId, assignedLocationId);
     // return await createPayment(token)
   } else if (reservation.status === "COMPLETED") {
     if (!reservation.actualStartTime || !reservation.actualEndTime) return null;
@@ -159,7 +339,18 @@ export async function validateQRToken(token: string, returnUrl?: string, employe
   }
 }
 
-export async function startSession(reservationId: string, employeeId?: string) {
+export async function startSession(
+  reservationId: string,
+  employeeId?: string,
+  assignedLocationId?: string,
+) {
+  if (employeeId && assignedLocationId) {
+    await assertEmployeeCanAccessReservation(
+      assignedLocationId,
+      reservationId,
+    );
+  }
+
   const updateData: any = {
     status: "ACTIVE",
     actualStartTime: new Date(),
@@ -180,7 +371,18 @@ export async function startSession(reservationId: string, employeeId?: string) {
   return response || null;
 }
 
-export async function completeSession(reservationId: string, employeeId?: string) {
+export async function completeSession(
+  reservationId: string,
+  employeeId?: string,
+  assignedLocationId?: string,
+) {
+  if (employeeId && assignedLocationId) {
+    await assertEmployeeCanAccessReservation(
+      assignedLocationId,
+      reservationId,
+    );
+  }
+
   const updateData: any = {
     status: "COMPLETED",
     actualEndTime: new Date(),

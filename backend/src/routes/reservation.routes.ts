@@ -1,6 +1,7 @@
 import express from "express";
 import {
   cancelReservation,
+  ClerkAccessError,
   completeSession,
   extendReservation,
   getActiveReservation,
@@ -10,9 +11,27 @@ import {
   validateQRToken,
 } from "../services/reservation.service";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { checkClerkShift } from "../middleware/role.middleware";
 import "../utils/logger";
 
 const reservationRouter = express.Router();
+
+function getClerkGateContext(res: express.Response) {
+  const user = res.locals.user;
+  if (!user || user.userType !== "employee") {
+    return null;
+  }
+
+  const shiftCheck = checkClerkShift(user);
+  if (!shiftCheck.ok) {
+    return { error: shiftCheck.error, status: 403 as const };
+  }
+
+  return {
+    employeeId: user.id as string,
+    assignedLocationId: user.assignedLocationId as string | null | undefined,
+  };
+}
 
 // 1. Create Reservation
 reservationRouter.post("/", authMiddleware, async (req, res) => {
@@ -198,10 +217,21 @@ reservationRouter.post("/cancel", async (req, res) => {
 reservationRouter.post("/validate", authMiddleware, async (req, res) => {
   try {
     const { qrToken } = req.body;
-    const employeeId = res.locals.user?.id;
+    const clerkContext = getClerkGateContext(res);
+    if (clerkContext && "error" in clerkContext) {
+      return res.status(clerkContext.status).json({ error: clerkContext.error });
+    }
+
+    const employeeId = clerkContext?.employeeId;
+    const assignedLocationId = clerkContext?.assignedLocationId;
     console.log("[RESERVATION] POST /validate - Validating QR token by employee:", employeeId);
 
-    const response = await validateQRToken(qrToken, undefined, employeeId);
+    const response = await validateQRToken(
+      qrToken,
+      undefined,
+      employeeId,
+      assignedLocationId,
+    );
     if (!response) {
       console.log("[RESERVATION] POST /validate - Invalid QR token");
       return res.status(401).json({ error: "Invalid Token" });
@@ -210,6 +240,12 @@ reservationRouter.post("/validate", authMiddleware, async (req, res) => {
     console.log("[RESERVATION] POST /validate - QR token validated successfully");
     return res.status(200).json(response);
   } catch (error: any) {
+    if (error instanceof ClerkAccessError) {
+      return res.status(403).json({ error: error.message });
+    }
+    if (error.message === "Invalid QR Token") {
+      return res.status(401).json({ error: "Invalid Token" });
+    }
     console.log("[RESERVATION] POST /validate - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -218,10 +254,20 @@ reservationRouter.post("/validate", authMiddleware, async (req, res) => {
 reservationRouter.post("/start", authMiddleware, async (req, res) => {
   try {
     const { reservationId } = req.body;
-    const employeeId = res.locals.user?.id;
+    const clerkContext = getClerkGateContext(res);
+    if (clerkContext && "error" in clerkContext) {
+      return res.status(clerkContext.status).json({ error: clerkContext.error });
+    }
+
+    const employeeId = clerkContext?.employeeId;
+    const assignedLocationId = clerkContext?.assignedLocationId;
     console.log("[RESERVATION] POST /start - Starting session for reservation:", reservationId);
 
-    const response = await startSession(reservationId, employeeId);
+    const response = await startSession(
+      reservationId,
+      employeeId,
+      assignedLocationId,
+    );
     if (!response) {
       console.log("[RESERVATION] POST /start - Unable to start session:", reservationId);
       return res.status(401).json({ error: "Unable to Start Session" });
@@ -230,6 +276,9 @@ reservationRouter.post("/start", authMiddleware, async (req, res) => {
     console.log("[RESERVATION] POST /start - Session started for reservation:", reservationId);
     return res.status(200).json(response);
   } catch (error: any) {
+    if (error instanceof ClerkAccessError) {
+      return res.status(403).json({ error: error.message });
+    }
     console.log("[RESERVATION] POST /start - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
@@ -238,10 +287,20 @@ reservationRouter.post("/start", authMiddleware, async (req, res) => {
 reservationRouter.post("/complete", authMiddleware, async (req, res) => {
   try {
     const { reservationId } = req.body;
-    const employeeId = res.locals.user?.id;
+    const clerkContext = getClerkGateContext(res);
+    if (clerkContext && "error" in clerkContext) {
+      return res.status(clerkContext.status).json({ error: clerkContext.error });
+    }
+
+    const employeeId = clerkContext?.employeeId;
+    const assignedLocationId = clerkContext?.assignedLocationId;
     console.log("[RESERVATION] POST /complete - Completing session for reservation:", reservationId);
 
-    const response = await completeSession(reservationId, employeeId);
+    const response = await completeSession(
+      reservationId,
+      employeeId,
+      assignedLocationId,
+    );
     if (!response) {
       console.log("[RESERVATION] POST /complete - Unable to complete session:", reservationId);
       return res.status(401).json({ error: "Unable to Complete Session" });
@@ -250,6 +309,9 @@ reservationRouter.post("/complete", authMiddleware, async (req, res) => {
     console.log("[RESERVATION] POST /complete - Session completed for reservation:", reservationId);
     return res.status(200).json(response);
   } catch (error: any) {
+    if (error instanceof ClerkAccessError) {
+      return res.status(403).json({ error: error.message });
+    }
     console.log("[RESERVATION] POST /complete - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }

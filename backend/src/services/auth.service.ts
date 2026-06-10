@@ -124,12 +124,60 @@ export async function findUserByEmail(email: string) {
   return user[0] ?? null;
 }
 
+function normalizePhoneDigits(phoneNumber: string) {
+  return phoneNumber.replace(/\D/g, "");
+}
+
+function buildPhoneCandidates(phoneNumber: string) {
+  const trimmed = phoneNumber.trim();
+  const digits = normalizePhoneDigits(trimmed);
+  const candidates = new Set<string>();
+
+  if (trimmed) candidates.add(trimmed);
+  if (digits) candidates.add(digits);
+
+  if (digits.startsWith("251")) {
+    candidates.add(`0${digits.slice(3)}`);
+    candidates.add(`+${digits}`);
+    candidates.add(`+251${digits.slice(3)}`);
+  } else if (digits.startsWith("0")) {
+    candidates.add(`251${digits.slice(1)}`);
+    candidates.add(`+251${digits.slice(1)}`);
+  } else if (digits.length === 9) {
+    candidates.add(`0${digits}`);
+    candidates.add(`251${digits}`);
+    candidates.add(`+251${digits}`);
+  }
+
+  return Array.from(candidates).filter(Boolean);
+}
+
 export async function findUserByPhone(phoneNumber: string) {
-  const user = await db
-    .select()
-    .from(users)
-    .where(eq(users.phoneNumber, phoneNumber));
-  return user[0] ?? null;
+  const candidates = buildPhoneCandidates(phoneNumber);
+
+  for (const candidate of candidates) {
+    const user = await db
+      .select()
+      .from(users)
+      .where(eq(users.phoneNumber, candidate))
+      .then((rows) => rows[0]);
+
+    if (user) return user;
+  }
+
+  const digits = normalizePhoneDigits(phoneNumber);
+  const suffix = digits.slice(-9);
+
+  if (suffix.length === 9) {
+    const allUsers = await db.select().from(users);
+    return (
+      allUsers.find((user) =>
+        normalizePhoneDigits(user.phoneNumber).endsWith(suffix),
+      ) ?? null
+    );
+  }
+
+  return null;
 }
 
 export async function findUserByEmailOrPhone(payload: {
