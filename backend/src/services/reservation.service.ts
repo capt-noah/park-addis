@@ -102,7 +102,7 @@ export class ClerkAccessError extends Error {
   }
 }
 
-function enrichReservationRow(row: Record<string, unknown>) {
+function enrichReservationRow<T extends Record<string, unknown>>(row: T) {
   const start = (row.actualStartTime || row.startTime) as Date | string;
   const end =
     row.actualEndTime ||
@@ -131,7 +131,7 @@ function enrichReservationRow(row: Record<string, unknown>) {
     duration,
     accrued: (hours * pricePerHour).toFixed(2),
     paymentStatus,
-  };
+  } as T & { duration: string; accrued: string; paymentStatus: string };
 }
 
 export async function getReservationLocationId(

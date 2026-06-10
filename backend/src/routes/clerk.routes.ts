@@ -161,7 +161,7 @@ clerkRouter.get("/sessions", async (req, res) => {
       ? statusParam.split(",").map((value) => value.trim()).filter(Boolean)
       : undefined;
 
-    const reservations = await getReservationsByLocationId(
+    const locationReservations = await getReservationsByLocationId(
       clerk.assignedLocationId,
       {
         statuses,
@@ -180,19 +180,19 @@ clerkRouter.get("/sessions", async (req, res) => {
       .then((r) => r[0]);
 
     const locationStats = await getLocationSpotStats(clerk.assignedLocationId);
-    const activeSessions = reservations.filter(
+    const activeSessions = locationReservations.filter(
       (reservation) =>
         reservation.status === "ACTIVE" || reservation.status === "RESERVED",
     ).length;
 
     console.log(
       "[CLERK] GET /sessions - Retrieved",
-      reservations.length,
+      locationReservations.length,
       "reservations for location:",
       clerk.assignedLocationId,
     );
     return res.status(200).json({
-      reservations,
+      reservations: locationReservations,
       locationId: location?.id ?? clerk.assignedLocationId,
       locationName: location?.name ?? null,
       locationStats: {
@@ -239,7 +239,13 @@ clerkRouter.get("/search-user", async (req, res) => {
     }
 
     const clerkProfile = res.locals.employee;
-    const activeReservation = await getActiveReservation(user.id);
+    const activeReservation = (await getActiveReservation(user.id)) as {
+      id: string;
+      locationId?: string;
+      status?: string;
+      qrToken?: string;
+      plateNumber?: string;
+    } | null;
     let locationMismatch = false;
 
     if (
@@ -255,9 +261,7 @@ clerkRouter.get("/search-user", async (req, res) => {
       locationMismatch = true;
     }
 
-    const { passwordHash, ...safeUser } = user as typeof user & {
-      passwordHash?: string;
-    };
+    const { passwordHash: _passwordHash, ...safeUser } = user;
 
     console.log(
       "[CLERK] GET /search-user - User found:",
