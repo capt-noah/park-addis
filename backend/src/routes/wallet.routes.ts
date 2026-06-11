@@ -172,7 +172,7 @@ walletRouter.post("/pay/reservation", authMiddleware, async (req, res) => {
     }
 
     console.log("[WALLET] POST /pay/reservation - Reservation payment successful for user:", userId);
-    return res.status(200).json(payRes);
+    return res.status(200).json({ ok: true, ...payRes });
   } catch (error: any) {
     console.log("[WALLET] POST /pay/reservation - Error:", error.message);
     return res.status(400).json({ error: error.message || "Payment from wallet failed" });
@@ -192,10 +192,31 @@ walletRouter.post("/pay/reservation-fee", authMiddleware, async (req, res) => {
     }
 
     console.log("[WALLET] POST /pay/reservation-fee - Reservation fee payment successful for user:", userId);
-    return res.status(200).json(payRes);
+    return res.status(200).json({ ok: true, ...payRes });
   } catch (error: any) {
     console.log("[WALLET] POST /pay/reservation-fee - Error:", error.message);
     return res.status(400).json({ error: error.message || "Reservation fee payment failed" });
+  }
+});
+
+
+// Auth-based transaction history — resolves walletId from session (no client walletId needed)
+walletRouter.get("/transactions", authMiddleware, async (req, res) => {
+  try {
+    const userId = res.locals.user.id;
+    console.log("[WALLET] GET /transactions - Fetching transactions for user:", userId);
+
+    const userWallet = await getWallet(userId);
+    if (!userWallet) {
+      return res.status(404).json({ error: "Wallet not found" });
+    }
+
+    const walletTrx = await getWalletTransactions(userWallet.id);
+    console.log("[WALLET] GET /transactions - Retrieved", (walletTrx || []).length, "transactions");
+    return res.status(200).json(walletTrx || []);
+  } catch (error: any) {
+    console.log("[WALLET] GET /transactions - Error:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 

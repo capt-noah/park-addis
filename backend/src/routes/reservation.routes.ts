@@ -219,11 +219,11 @@ reservationRouter.post("/validate", authMiddleware, async (req, res) => {
     const { qrToken } = req.body;
     const clerkContext = getClerkGateContext(res);
     if (clerkContext && "error" in clerkContext) {
-      return res.status(clerkContext.status).json({ error: clerkContext.error });
+      return res.status(clerkContext.status ?? 403).json({ error: clerkContext.error });
     }
 
     const employeeId = clerkContext?.employeeId;
-    const assignedLocationId = clerkContext?.assignedLocationId;
+    const assignedLocationId = clerkContext?.assignedLocationId ?? undefined;
     console.log("[RESERVATION] POST /validate - Validating QR token by employee:", employeeId);
 
     const response = await validateQRToken(
@@ -256,11 +256,11 @@ reservationRouter.post("/start", authMiddleware, async (req, res) => {
     const { reservationId } = req.body;
     const clerkContext = getClerkGateContext(res);
     if (clerkContext && "error" in clerkContext) {
-      return res.status(clerkContext.status).json({ error: clerkContext.error });
+      return res.status(clerkContext.status ?? 403).json({ error: clerkContext.error });
     }
 
     const employeeId = clerkContext?.employeeId;
-    const assignedLocationId = clerkContext?.assignedLocationId;
+    const assignedLocationId = clerkContext?.assignedLocationId ?? undefined;
     console.log("[RESERVATION] POST /start - Starting session for reservation:", reservationId);
 
     const response = await startSession(
@@ -289,11 +289,11 @@ reservationRouter.post("/complete", authMiddleware, async (req, res) => {
     const { reservationId } = req.body;
     const clerkContext = getClerkGateContext(res);
     if (clerkContext && "error" in clerkContext) {
-      return res.status(clerkContext.status).json({ error: clerkContext.error });
+      return res.status(clerkContext.status ?? 403).json({ error: clerkContext.error });
     }
 
     const employeeId = clerkContext?.employeeId;
-    const assignedLocationId = clerkContext?.assignedLocationId;
+    const assignedLocationId = clerkContext?.assignedLocationId ?? undefined;
     console.log("[RESERVATION] POST /complete - Completing session for reservation:", reservationId);
 
     const response = await completeSession(

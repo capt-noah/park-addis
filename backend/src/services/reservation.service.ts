@@ -109,6 +109,7 @@ export async function getUserReservations(userId: string) {
   const userReservations = await db
     .select({
       id: reservations.id,
+      userId: reservations.userId,
       startTime: reservations.startTime,
       endTime: reservations.endTime,
       actualStartTime: reservations.actualStartTime,
@@ -117,8 +118,10 @@ export async function getUserReservations(userId: string) {
       qrToken: reservations.qrToken,
       createdAt: reservations.createdAt,
       spotId: reservations.spotId,
+      locationId: parkingSpots.locationId,
       locationName: parkingLocations.name,
       locationAddress: parkingLocations.address,
+      locationGeom: parkingLocations.geom,
       pricePerHour: parkingSpots.pricePerHour,
       plateNumber: vehicles.plateNumber,
       carModel: vehicles.carModel,
@@ -134,7 +137,7 @@ export async function getUserReservations(userId: string) {
     .where(eq(reservations.userId, userId))
     .orderBy(desc(reservations.startTime));
 
-  return userReservations.map(enrichReservationRow);
+  return userReservations.map(enrichReservationRow).map(nestReservationFields);
 }
 
 export class ClerkAccessError extends Error {
@@ -148,6 +151,29 @@ export class ClerkAccessError extends Error {
     this.name = "ClerkAccessError";
     this.code = code;
   }
+}
+
+
+/** Adds nested `spot`, `vehicle`, and `location` objects expected by the mobile app. */
+function nestReservationFields<T extends Record<string, unknown>>(row: T) {
+  return {
+    ...row,
+    vehicle: {
+      plateNumber: row.plateNumber,
+      carModel: row.carModel,
+      carColor: row.carColor,
+    },
+    spot: {
+      id: row.spotId,
+      locationId: row.locationId,
+      pricePerHour: row.pricePerHour,
+      location: {
+        id: row.locationId,
+        name: row.locationName,
+        geom: row.locationGeom,
+      },
+    },
+  };
 }
 
 function enrichReservationRow<T extends Record<string, unknown>>(row: T) {
@@ -304,12 +330,17 @@ export async function getActiveReservation(userId: string) {
   const active = await db
     .select({
       id: reservations.id,
+      userId: reservations.userId,
       startTime: reservations.startTime,
       endTime: reservations.endTime,
+      actualStartTime: reservations.actualStartTime,
+      actualEndTime: reservations.actualEndTime,
       status: reservations.status,
       qrToken: reservations.qrToken,
+      spotId: reservations.spotId,
       locationId: parkingSpots.locationId,
       locationName: parkingLocations.name,
+      locationGeom: parkingLocations.geom,
       pricePerHour: parkingSpots.pricePerHour,
       plateNumber: vehicles.plateNumber,
       carModel: vehicles.carModel,
@@ -334,7 +365,7 @@ export async function getActiveReservation(userId: string) {
     .orderBy(desc(reservations.startTime))
     .limit(1);
 
-  const result = active[0] ? enrichReservationRow(active[0]) : null;
+  const result = active[0] ? nestReservationFields(enrichReservationRow(active[0])) : null;
   if (result) {
     await setActiveReservationCache(userId, result);
   }
