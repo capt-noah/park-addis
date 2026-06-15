@@ -277,6 +277,10 @@ export async function deleteSession(sessionId: string) {
 }
 
 export async function findSession(id: string) {
+  // Guard: Postgres UUID columns throw on non-UUID strings
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!id || !uuidRegex.test(id)) return null;
+
   const userSession = await db
     .select()
     .from(sessions)

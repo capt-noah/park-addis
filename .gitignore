@@ -48,3 +48,4 @@ docs/admin_dashboard_integration_guide.md
 docs/clerk_app_integration_guide.md
 docs/admin_frontend_prompt.md
 backend/test/loadtest.js
+backend/backend_api_docs.md
