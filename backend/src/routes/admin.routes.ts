@@ -252,14 +252,64 @@ adminRouter.get("/locations", async (req, res) => {
       id: parkingLocations.id,
       name: parkingLocations.name,
       address: parkingLocations.address,
-      geom: parkingLocations.geom,
       createdAt: parkingLocations.createdAt,
-    }).from(parkingLocations).orderBy(desc(parkingLocations.createdAt));
+      pricePerHour: parkingSpots.pricePerHour,
+      totalSlots: parkingSpots.totalSlots,
+      lat: sql<number>`ST_Y(${parkingLocations.geom}::geometry)`,
+      lng: sql<number>`ST_X(${parkingLocations.geom}::geometry)`,
+    })
+    .from(parkingLocations)
+    .leftJoin(parkingSpots, eq(parkingLocations.id, parkingSpots.locationId))
+    .orderBy(desc(parkingLocations.createdAt));
 
     console.log("[ADMIN] GET /locations - Locations fetched:", locs.length);
     return res.status(200).json(locs);
   } catch (error: any) {
     console.error("[ADMIN] GET /locations - Error:", error.message);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+adminRouter.put("/locations/:id", async (req, res) => {
+  const locationId = req.params.id;
+  console.log("[ADMIN] PUT /locations/:id - Updating location details for ID:", locationId);
+  try {
+    const { name, address, lat, lng, pricePerHour, totalSlots } = req.body;
+    
+    // Update parkingLocations
+    const locationUpdate: any = {};
+    if (name !== undefined) locationUpdate.name = name;
+    if (address !== undefined) locationUpdate.address = address;
+    
+    if (lat !== undefined && lng !== undefined) {
+      await db.execute(sql`
+        UPDATE parking_locations
+        SET geom = ST_POINT(${Number(lng)}, ${Number(lat)}, 4326)::GEOGRAPHY
+        WHERE id = ${locationId}
+      `);
+    }
+    
+    if (Object.keys(locationUpdate).length > 0) {
+      await db.update(parkingLocations).set(locationUpdate).where(eq(parkingLocations.id, locationId));
+    }
+    
+    // Update parkingSpots
+    const spotUpdate: any = {};
+    if (pricePerHour !== undefined) spotUpdate.pricePerHour = pricePerHour.toString();
+    if (totalSlots !== undefined) {
+      const slots = Number(totalSlots);
+      spotUpdate.totalSlots = slots;
+      spotUpdate.availableSlots = slots; // reset available slots to match updated total slots
+    }
+    
+    if (Object.keys(spotUpdate).length > 0) {
+      await db.update(parkingSpots).set(spotUpdate).where(eq(parkingSpots.locationId, locationId));
+    }
+
+    console.log("[ADMIN] PUT /locations/:id - Location updated successfully:", locationId);
+    return res.status(200).json({ message: "Location updated successfully" });
+  } catch (error: any) {
+    console.error("[ADMIN] PUT /locations/:id - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
