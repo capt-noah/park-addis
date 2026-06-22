@@ -15,17 +15,21 @@ import { eq, desc, count, sum, sql, and, ilike, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { validateAdmin, createSession, registerAdmin } from "../services/auth.service";
+import "../utils/logger";
 
 const adminRouter = express.Router();
 
 // --- 0. Admin Authentication (Public) ---
 
 adminRouter.post("/login", async (req, res) => {
+  const { email } = req.body;
+  console.log("[ADMIN] POST /login - Attempting admin login for:", email);
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
     const result = await validateAdmin(email, password);
 
     if (!result) {
+      console.log("[ADMIN] POST /login - Invalid credentials for:", email);
       return res.status(401).json({ error: "Invalid Admin Credentials" });
     }
 
@@ -37,15 +41,19 @@ adminRouter.post("/login", async (req, res) => {
       path: "/",
     });
 
+    console.log("[ADMIN] POST /login - Login successful for admin:", result.entity.id);
     return res.status(200).json({ user: result.entity, sessionId });
   } catch (error: any) {
+    console.error("[ADMIN] POST /login - Error:", error.message);
     return res.status(500).json({ error: error.message });
   }
 });
 
 adminRouter.post("/register", async (req, res) => {
+  const { email } = req.body;
+  console.log("[ADMIN] POST /register - Registering admin:", email);
   try {
-    const { fullName, email, password, phoneNumber } = req.body;
+    const { fullName, password, phoneNumber } = req.body;
     const newAdmin = await registerAdmin(fullName, email, password, phoneNumber);
     
     const sessionId = await createSession(newAdmin.id, "admin");
@@ -56,8 +64,10 @@ adminRouter.post("/register", async (req, res) => {
       path: "/",
     });
 
+    console.log("[ADMIN] POST /register - Registration successful for admin:", newAdmin.id);
     return res.status(201).json({ user: newAdmin, sessionId });
   } catch (error: any) {
+    console.error("[ADMIN] POST /register - Error:", error.message);
     return res.status(500).json({ error: error.message });
   }
 });
@@ -68,6 +78,7 @@ adminRouter.use(isAdmin);
 
 // --- 1. Global Statistics ---
 adminRouter.get("/stats", async (req, res) => {
+  console.log("[ADMIN] GET /stats - Fetching statistics for admin:", res.locals.user.id);
   try {
     const totalUsersResult = await db.select({ value: count() }).from(users).where(eq(users.role, "user"));
     const activeSessionsResult = await db.select({ value: count() }).from(reservations).where(eq(reservations.status, "ACTIVE"));
@@ -133,6 +144,7 @@ adminRouter.get("/stats", async (req, res) => {
       rank: `0${index + 1}`
     }));
 
+    console.log("[ADMIN] GET /stats - Stats compiled successfully");
     return res.status(200).json({
       totalUsers: totalUsersResult[0]?.value || 0,
       activeSessions: activeSessionsResult[0]?.value || 0,
@@ -142,13 +154,14 @@ adminRouter.get("/stats", async (req, res) => {
       topLocations
     });
   } catch (error: any) {
-    console.error("[ADMIN] /stats Error:", error.message);
+    console.error("[ADMIN] GET /stats - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // --- 2. Employee (Clerk) Management ---
 adminRouter.get("/clerks", async (req, res) => {
+  console.log("[ADMIN] GET /clerks - Fetching clerks list");
   try {
     const clerksData = await db.select({
       id: employees.id,
@@ -166,18 +179,22 @@ adminRouter.get("/clerks", async (req, res) => {
     .where(eq(employees.role, "employee"))
     .orderBy(desc(employees.createdAt));
 
+    console.log("[ADMIN] GET /clerks - Clerks fetched:", clerksData.length);
     return res.status(200).json(clerksData);
   } catch (error: any) {
-    console.error("[ADMIN] /clerks Error:", error.message);
+    console.error("[ADMIN] GET /clerks - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 adminRouter.post("/clerks", async (req, res) => {
+  const { email } = req.body;
+  console.log("[ADMIN] POST /clerks - Creating clerk onboarding for:", email);
   try {
-    const { fullName, email, password, phoneNumber, assignedLocationId, shiftStartTime, shiftEndTime } = req.body;
+    const { fullName, password, phoneNumber, assignedLocationId, shiftStartTime, shiftEndTime } = req.body;
     
     if (!fullName || !email || !password || !shiftStartTime || !shiftEndTime) {
+        console.log("[ADMIN] POST /clerks - Missing required fields for clerk creation");
         return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -195,17 +212,19 @@ adminRouter.post("/clerks", async (req, res) => {
       shiftEndTime
     }).returning().then(r => r[0]);
 
+    console.log("[ADMIN] POST /clerks - Clerk created successfully with ID:", newEmployee.id);
     return res.status(201).json({ message: "Employee created successfully", clerk: newEmployee });
   } catch (error: any) {
-    console.error("[ADMIN] POST /clerks Error:", error.message);
+    console.error("[ADMIN] POST /clerks - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 adminRouter.put("/clerks/:id", async (req, res) => {
+  const clerkId = req.params.id;
+  console.log("[ADMIN] PUT /clerks/:id - Updating clerk status/hours details for ID:", clerkId);
   try {
     const { assignedLocationId, shiftStartTime, shiftEndTime, status } = req.body;
-    const clerkId = req.params.id;
       
     const updateData: any = {};
     if (status !== undefined) updateData.status = status;
@@ -217,15 +236,17 @@ adminRouter.put("/clerks/:id", async (req, res) => {
       await db.update(employees).set(updateData).where(eq(employees.id, clerkId));
     }
 
+    console.log("[ADMIN] PUT /clerks/:id - Clerk updated successfully:", clerkId, updateData);
     return res.status(200).json({ message: "Employee updated successfully" });
   } catch (error: any) {
-    console.error("[ADMIN] PUT /clerks Error:", error.message);
+    console.error("[ADMIN] PUT /clerks/:id - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // --- 3. Location Management ---
 adminRouter.get("/locations", async (req, res) => {
+  console.log("[ADMIN] GET /locations - Fetching locations list");
   try {
     const locs = await db.select({
       id: parkingLocations.id,
@@ -235,18 +256,22 @@ adminRouter.get("/locations", async (req, res) => {
       createdAt: parkingLocations.createdAt,
     }).from(parkingLocations).orderBy(desc(parkingLocations.createdAt));
 
+    console.log("[ADMIN] GET /locations - Locations fetched:", locs.length);
     return res.status(200).json(locs);
   } catch (error: any) {
-    console.error("[ADMIN] GET /locations Error:", error.message);
+    console.error("[ADMIN] GET /locations - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 adminRouter.post("/locations", async (req, res) => {
+  const { name } = req.body;
+  console.log("[ADMIN] POST /locations - Creating location named:", name);
   try {
-    const { name, address, lat, lng, pricePerHour, totalSlots } = req.body;
+    const { address, lat, lng, pricePerHour, totalSlots } = req.body;
     
     if (!name || !address || !lat || !lng || !pricePerHour || !totalSlots) {
+      console.log("[ADMIN] POST /locations - Missing required fields for location creation");
       return res.status(400).json({ error: "Missing required fields" });
     }
 
@@ -265,18 +290,19 @@ adminRouter.post("/locations", async (req, res) => {
       availableSlots: slots,
     }).returning().then(r => r[0]);
 
+    console.log("[ADMIN] POST /locations - Location created successfully with ID:", (newLocation as any).id);
     return res.status(201).json({ message: "Location created successfully", location: newLocation, spot: newSpot });
   } catch (error: any) {
-    console.error("[ADMIN] POST /locations Error:", error.message);
+    console.error("[ADMIN] POST /locations - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // --- 4. Global Reservations ---
 adminRouter.get("/reservations", async (req, res) => {
+  const statusFilter = req.query.status as string;
+  console.log("[ADMIN] GET /reservations - Fetching reservations, status filter:", statusFilter || "NONE");
   try {
-    const statusFilter = req.query.status as string;
-    
     let query = db.select({
       id: reservations.id,
       userId: reservations.userId,
@@ -305,17 +331,19 @@ adminRouter.get("/reservations", async (req, res) => {
     }
 
     const allReservations = await query.limit(100);
+    console.log("[ADMIN] GET /reservations - Reservations loaded:", allReservations.length);
     return res.status(200).json(allReservations);
   } catch (error: any) {
-    console.error("[ADMIN] /reservations Error:", error.message);
+    console.error("[ADMIN] GET /reservations - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 // --- 4. Profile & Notifications ---
 adminRouter.put("/profile", async (req, res) => {
+  const adminId = res.locals.user.id;
+  console.log("[ADMIN] PUT /profile - Updating admin profile for ID:", adminId);
   try {
-    const adminId = res.locals.user.id;
     const { fullName, email, password } = req.body;
 
     const updateData: any = {};
@@ -329,35 +357,41 @@ adminRouter.put("/profile", async (req, res) => {
       await db.update(admins).set(updateData).where(eq(admins.id, adminId));
     }
 
+    console.log("[ADMIN] PUT /profile - Admin profile updated successfully for ID:", adminId);
     return res.status(200).json({ message: "Profile updated successfully" });
   } catch (error: any) {
-    console.error("[ADMIN] PUT /profile Error:", error.message);
+    console.error("[ADMIN] PUT /profile - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 adminRouter.get("/notifications", async (req, res) => {
+  console.log("[ADMIN] GET /notifications - Fetching alerts list");
   try {
     const alerts = await db.select().from(adminNotifications).orderBy(desc(adminNotifications.createdAt)).limit(50);
+    console.log("[ADMIN] GET /notifications - Alerts fetched:", alerts.length);
     return res.status(200).json(alerts);
   } catch (error: any) {
-    console.error("[ADMIN] GET /notifications Error:", error.message);
+    console.error("[ADMIN] GET /notifications - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 adminRouter.put("/notifications/read", async (req, res) => {
+  const { notificationIds } = req.body;
+  console.log("[ADMIN] PUT /notifications/read - Marking notifications read:", notificationIds);
   try {
-    const { notificationIds } = req.body;
     if (!Array.isArray(notificationIds) || notificationIds.length === 0) {
+        console.log("[ADMIN] PUT /notifications/read - Missing or empty notificationIds array");
         return res.status(400).json({ error: "notificationIds array is required" });
     }
 
     await db.update(adminNotifications).set({ isRead: true }).where(inArray(adminNotifications.id, notificationIds));
 
+    console.log("[ADMIN] PUT /notifications/read - Marked successfully:", notificationIds.length);
     return res.status(200).json({ message: "Notifications marked as read" });
   } catch (error: any) {
-    console.error("[ADMIN] PUT /notifications/read Error:", error.message);
+    console.error("[ADMIN] PUT /notifications/read - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });

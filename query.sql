@@ -15,11 +15,11 @@ CREATE TABLE employees (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     phone_number TEXT UNIQUE NOT NULL,
-    status TEXT DEFAULT 'ACTIVE' CHECK(status in ('ACTIVE', 'ON_BREAK')),
+    status TEXT DEFAULT 'ACTIVE' CHECK(status in ('ACTIVE', 'SUSPENDED')),
     role TEXT DEFAULT 'employee',
     assigned_location_id UUID REFERENCES parking_locations(id) ON DELETE SET NULL,
-    shift_start_time TIME,
-    shift_end_time TIME,
+    shift_start_time TIMETZ,
+    shift_end_time TIMETZ,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
