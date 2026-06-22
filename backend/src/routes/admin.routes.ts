@@ -253,13 +253,12 @@ adminRouter.get("/locations", async (req, res) => {
       name: parkingLocations.name,
       address: parkingLocations.address,
       createdAt: parkingLocations.createdAt,
-      pricePerHour: parkingSpots.pricePerHour,
-      totalSlots: parkingSpots.totalSlots,
+      pricePerHour: sql<number>`(SELECT ps.price_per_hour FROM parking_spots ps WHERE ps.location_id = ${parkingLocations.id} LIMIT 1)`,
+      totalSlots:  sql<number>`(SELECT ps.total_slots  FROM parking_spots ps WHERE ps.location_id = ${parkingLocations.id} LIMIT 1)`,
       lat: sql<number>`ST_Y(${parkingLocations.geom}::geometry)`,
       lng: sql<number>`ST_X(${parkingLocations.geom}::geometry)`,
     })
     .from(parkingLocations)
-    .leftJoin(parkingSpots, eq(parkingLocations.id, parkingSpots.locationId))
     .orderBy(desc(parkingLocations.createdAt));
 
     console.log("[ADMIN] GET /locations - Locations fetched:", locs.length);
@@ -269,6 +268,7 @@ adminRouter.get("/locations", async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 adminRouter.put("/locations/:id", async (req, res) => {
   const locationId = req.params.id;
