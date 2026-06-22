@@ -1,6 +1,6 @@
 import { Response, Request, NextFunction } from "express";
 
-const OVERLAP_MINS = 60;
+const OVERLAP_MINS = 0;
 
 export function checkClerkShift(profile: {
   shiftStartTime?: string | null;
@@ -11,8 +11,17 @@ export function checkClerkShift(profile: {
   }
 
   const now = new Date();
-  const currentHour = now.getHours();
-  const currentMinute = now.getMinutes();
+  // Get the precise current hour and minute in Addis Ababa timezone
+  const timeString = now.toLocaleTimeString("en-US", {
+    timeZone: "Africa/Addis_Ababa",
+    hour12: false,
+    hour: "numeric",
+    minute: "numeric",
+  });
+  
+  const [curH, curM] = timeString.split(":").map(Number);
+  const currentHour = curH === 24 ? 0 : curH;
+  const currentMinute = curM;
 
   const [startH, startM] = profile.shiftStartTime.split(":").map(Number);
   const [endH, endM] = profile.shiftEndTime.split(":").map(Number);
@@ -33,6 +42,7 @@ export function checkClerkShift(profile: {
     currentMins < shiftStartMins - OVERLAP_MINS ||
     currentMins > shiftEndMins + OVERLAP_MINS
   ) {
+    console.log(`[Shift Guard] Failed for ${profile.shiftStartTime}-${profile.shiftEndTime}. Server Addis Time is ${currentHour}:${currentMinute}.`);
     return {
       ok: false,
       error: "Access Denied: Outside of active shift hours",
