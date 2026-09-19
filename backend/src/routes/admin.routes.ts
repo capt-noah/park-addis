@@ -42,7 +42,8 @@ adminRouter.post("/login", async (req, res) => {
     });
 
     console.log("[ADMIN] POST /login - Login successful for admin:", result.entity.id);
-    return res.status(200).json({ user: result.entity, sessionId });
+    const { passwordHash, ...safeAdmin } = result.entity;
+    return res.status(200).json({ user: safeAdmin, sessionId });
   } catch (error: any) {
     console.error("[ADMIN] POST /login - Error:", error.message);
     return res.status(500).json({ error: error.message });
@@ -65,7 +66,8 @@ adminRouter.post("/register", async (req, res) => {
     });
 
     console.log("[ADMIN] POST /register - Registration successful for admin:", newAdmin.id);
-    return res.status(201).json({ user: newAdmin, sessionId });
+    const { passwordHash, ...safeAdmin } = newAdmin;
+    return res.status(201).json({ user: safeAdmin, sessionId });
   } catch (error: any) {
     console.error("[ADMIN] POST /register - Error:", error.message);
     return res.status(500).json({ error: error.message });
@@ -213,7 +215,8 @@ adminRouter.post("/clerks", async (req, res) => {
     }).returning().then(r => r[0]);
 
     console.log("[ADMIN] POST /clerks - Clerk created successfully with ID:", newEmployee.id);
-    return res.status(201).json({ message: "Employee created successfully", clerk: newEmployee });
+    const { passwordHash: _hash, ...safeEmployee } = newEmployee;
+    return res.status(201).json({ message: "Employee created successfully", clerk: safeEmployee });
   } catch (error: any) {
     console.error("[ADMIN] POST /clerks - Error:", error.message);
     return res.status(500).json({ error: "Internal Server Error" });

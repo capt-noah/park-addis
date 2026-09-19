@@ -62,12 +62,11 @@ export default function WalletPage() {
       // 1. Get User
       const userRes = await fetch("/api/auth/me");
       if (!userRes.ok) throw new Error("Auth failed");
-      const userData = await userRes.json();
-      
-      setUserId(userData.userId);
+      const currentUserId = userData.id || userData.userId;
+      setUserId(currentUserId);
       setUserName(userData.fullName?.toUpperCase() || "NOAH SAMUEL");
       setUser({
-        userId: userData.userId,
+        userId: currentUserId,
         fullName: userData.fullName,
         email: userData.email,
         role: userData.role || "user"

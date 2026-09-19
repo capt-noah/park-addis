@@ -9,6 +9,7 @@ import crypto from "crypto";
 import Decimal from "decimal.js";
 import { users } from "../schema/users";
 import { reservations } from "../schema/reservations";
+import { invalidateActiveReservationCache } from "./cache/reservation-cache";
 
 export async function createWallet(userId: string) {
   const balance = new Decimal("0").toString();
@@ -300,7 +301,21 @@ export async function payReservationFromWallet(
   if (new Decimal(wallet.balance).lt(amount))
     throw new Error("Insufficient funds");
 
-  return await db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
+    const reservation = await tx
+      .select()
+      .from(reservations)
+      .where(
+        and(
+          eq(reservations.id, reservationId),
+          eq(reservations.userId, userId),
+        ),
+      )
+      .then((r) => r[0]);
+
+    if (!reservation) throw new Error("Reservation not found");
+    if (reservation.status === "PAID") throw new Error("Reservation is already paid");
+
     const tx_id = crypto.randomUUID();
 
     const walletTx = await tx
@@ -337,4 +352,10 @@ export async function payReservationFromWallet(
 
     return { success: true, balance: updatedWallet.balance };
   });
+
+  if (result.success) {
+    await invalidateActiveReservationCache(userId);
+  }
+
+  return result;
 }

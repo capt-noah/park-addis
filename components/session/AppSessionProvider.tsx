@@ -75,7 +75,7 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
       setUser(userData);
 
       // 2. Fetch Wallet Balance (only if user exists)
-      if (userData.userId) {
+      if (userData && (userData.id || userData.userId)) {
         const walletRes = await fetch("/api/wallet");
         if (walletRes.ok) {
           const walletData = await walletRes.json();
@@ -102,10 +102,6 @@ export function AppSessionProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     fetchSession();
   }, [fetchSession]);
-
-  if (!mounted) {
-    return <div className="min-h-screen bg-background opacity-0" />;
-  }
 
   return (
     <SessionContext.Provider value={{ 

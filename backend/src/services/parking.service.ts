@@ -45,7 +45,7 @@ export async function getParkingLocationsWithinRange(range: number, coor: {lng: 
                                         'address', address,
                                         'ratingsSum', ratings_sum,
                                         'ratingsCount', ratings_count,
-                                        'ratings', ratings_sum / ratings_count,
+                                        'ratings', CASE WHEN ratings_count > 0 THEN ratings_sum / ratings_count ELSE 0 END,
                                         'price', display_price_per_hour,
                                         'distance', ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY),
                                         'eta', ST_Distance(geom, ST_Point(${coor.lng}, ${coor.lat}, 4326)::GEOGRAPHY) / 5 / 100 

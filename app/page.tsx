@@ -24,13 +24,15 @@ export default async function Home() {
   if (!sessionId) userStatus = false;
 
   if (sessionId) {
-    const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-      headers: { Cookie: `sessionId=${sessionId}` }
+    const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:1000";
+    const userRes = await fetch(`${backendUrl}/api/auth/me`, {
+      headers: { Cookie: `sessionId=${sessionId}` },
+      cache: "no-store",
     });
 
     if (userRes.ok) {
       const userData = await userRes.json();
-      if (userData.userId) userStatus = true;
+      if (userData.id || userData.userId) userStatus = true;
     }
   }
 

@@ -15,7 +15,7 @@ const presets = [100, 250, 500];
 
 export function TopUpModal({ isOpen, onClose, onConfirm, isProcessing = false }: TopUpModalProps) {
   const [amount, setAmount] = useState(500);
-  const [paymentMethod, setPaymentMethod] = useState<"chapa" | "telebirr">("telebirr");
+  const [paymentMethod, setPaymentMethod] = useState<"chapa" | "telebirr">("chapa");
 
   if (!isOpen) return null;
 

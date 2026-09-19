@@ -36,9 +36,9 @@ walletRouter.get("/", authMiddleware, async (req, res) => {
 });
 
 // 2. Backward compatibility
-walletRouter.post("/user", async (req, res) => {
+walletRouter.post("/user", authMiddleware, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = res.locals.user?.id || req.body.userId;
     console.log("[WALLET] POST /user - Fetching wallet for user:", userId);
 
     const userWallet = await getWallet(userId);
@@ -55,9 +55,9 @@ walletRouter.post("/user", async (req, res) => {
   }
 });
 
-walletRouter.post("/create", async (req, res) => {
+walletRouter.post("/create", authMiddleware, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = res.locals.user?.id || req.body.userId;
     console.log("[WALLET] POST /create - Creating wallet for user:", userId);
 
     const userWallet = await createWallet(userId);
@@ -74,7 +74,7 @@ walletRouter.post("/create", async (req, res) => {
   }
 });
 
-walletRouter.post("/transaction", async (req, res) => {
+walletRouter.post("/transaction", authMiddleware, async (req, res) => {
   try {
     const { walletId } = req.body;
     console.log("[WALLET] POST /transaction - Fetching transactions for wallet:", walletId);
@@ -122,7 +122,7 @@ walletRouter.post("/topup", authMiddleware, async (req, res) => {
 walletRouter.all("/callback", async (req, res) => {
   try {
     const tx_ref =
-      req.body.tx_ref || req.query.tx_ref || req.body.trx_ref || req.query.trx_ref;
+      req.body?.tx_ref || req.query?.tx_ref || req.body?.trx_ref || req.query?.trx_ref;
 
     console.log("[WALLET] /callback - Wallet callback received for transaction:", tx_ref);
 

@@ -9,27 +9,29 @@ export default async function ReservationsPage() {
   const sessionId = cookieStore.get("sessionId")?.value;
   if (!sessionId) redirect("/login");
 
-  const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-    headers: { Cookie: `sessionId=${sessionId}` }
+  const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:1000";
+
+  const userRes = await fetch(`${backendUrl}/api/auth/me`, {
+    headers: { Cookie: `sessionId=${sessionId}` },
+    cache: "no-store",
   });
 
   if (!userRes.ok) redirect("/login");
   const userData = await userRes.json();
-  const dbUser = userData.userId ? userData : null;
+  const dbUser = (userData.id || userData.userId) ? userData : null;
   if (!dbUser) redirect("/login");
 
   const user = {
-    userId: dbUser.userId,
+    userId: dbUser.id || dbUser.userId,
     fullName: dbUser.fullName,
     email: dbUser.email,
     role: dbUser.role ?? "user",
   };
 
-  // Fetch Reservations
-  const reservationsRes = await fetch(`${process.env.BACKEND_URL}/api/reservation/reservations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: dbUser.userId })
+  // Fetch Reservations (Session-based)
+  const reservationsRes = await fetch(`${backendUrl}/api/reservation`, {
+    headers: { Cookie: `sessionId=${sessionId}` },
+    cache: "no-store",
   });
   const { reservations: initialReservations = [] } = await reservationsRes.json();
 

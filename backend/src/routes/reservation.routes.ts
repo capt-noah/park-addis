@@ -58,15 +58,16 @@ reservationRouter.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-reservationRouter.post("/reserve", async (req, res) => {
+reservationRouter.post("/reserve", authMiddleware, async (req, res) => {
   try {
-    const { userId, spotId, vehicleId, startTime, endTime } = req.body;
+    const userId = res.locals.user?.id || req.body.userId;
+    const { spotId, vehicleId, startTime, endTime } = req.body;
     console.log("[RESERVATION] POST /reserve - Creating reservation for user:", userId, "spot:", spotId);
 
-    const reservedSpot = await reserveSpot(userId, spotId, vehicleId, startTime, endTime);
+    const reservedSpot = await reserveSpot(userId, spotId, vehicleId, new Date(startTime), new Date(endTime));
     if (!reservedSpot) {
       console.log("[RESERVATION] POST /reserve - Failed to reserve spot:", spotId);
-      return res.status(301).json({ error: "Unable to Reserve Parking Spot" });
+      return res.status(400).json({ error: "Unable to Reserve Parking Spot" });
     }
 
     console.log("[RESERVATION] POST /reserve - Reservation created successfully for user:", userId);
@@ -86,7 +87,7 @@ reservationRouter.get("/", authMiddleware, async (req, res) => {
     const reservations = await getUserReservations(userId);
     if (!reservations) {
       console.log("[RESERVATION] GET / - No reservations found for user:", userId);
-      return res.status(404).json({ error: "No Reservations Found" });
+      return res.status(200).json({ reservations: [] });
     }
 
     console.log(
@@ -102,15 +103,15 @@ reservationRouter.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-reservationRouter.post("/reservations", async (req, res) => {
+reservationRouter.post("/reservations", authMiddleware, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = res.locals.user?.id || req.body.userId;
     console.log("[RESERVATION] POST /reservations - Fetching reservations for user:", userId);
 
     const reservations = await getUserReservations(userId);
     if (!reservations) {
       console.log("[RESERVATION] POST /reservations - No reservations found for user:", userId);
-      return res.status(301).json({ error: "No Reservations Found" });
+      return res.status(200).json({ reservations: [] });
     }
 
     console.log(
@@ -146,9 +147,9 @@ reservationRouter.get("/active", authMiddleware, async (req, res) => {
   }
 });
 
-reservationRouter.post("/active", async (req, res) => {
+reservationRouter.post("/active", authMiddleware, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = res.locals.user?.id || req.body.userId;
     console.log("[RESERVATION] POST /active - Fetching active reservation for user:", userId);
 
     const active = await getActiveReservation(userId);
@@ -195,7 +196,7 @@ reservationRouter.delete("/", authMiddleware, async (req, res) => {
   }
 });
 
-reservationRouter.post("/cancel", async (req, res) => {
+reservationRouter.post("/cancel", authMiddleware, async (req, res) => {
   try {
     const { reservationId } = req.body;
     console.log("[RESERVATION] POST /cancel - Cancelling reservation:", reservationId);
@@ -203,7 +204,7 @@ reservationRouter.post("/cancel", async (req, res) => {
     const isCancelled = await cancelReservation(reservationId);
     if (!isCancelled) {
       console.log("[RESERVATION] POST /cancel - Failed to cancel reservation:", reservationId);
-      return res.status(301).json({ error: "Unable To Cancel Reservation" });
+      return res.status(400).json({ error: "Unable To Cancel Reservation" });
     }
 
     console.log("[RESERVATION] POST /cancel - Reservation cancelled successfully:", reservationId);
@@ -318,7 +319,7 @@ reservationRouter.post("/complete", authMiddleware, async (req, res) => {
 });
 
 // 6. Extend Session
-reservationRouter.post("/extend", async (req, res) => {
+reservationRouter.post("/extend", authMiddleware, async (req, res) => {
   try {
     const { reservationId, extraMinutes } = req.body;
     console.log("[RESERVATION] POST /extend - Extending reservation:", reservationId, "by", extraMinutes, "minutes");

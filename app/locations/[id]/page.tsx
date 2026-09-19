@@ -14,18 +14,21 @@ export default async function LocationDetailsPage({ params }: PageProps) {
   const sessionId = cookieStore.get("sessionId")?.value;
   if (!sessionId) redirect("/login");
 
+  const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:1000";
+
   // Fetch User
-  const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-    headers: { Cookie: `sessionId=${sessionId}` }
+  const userRes = await fetch(`${backendUrl}/api/auth/me`, {
+    headers: { Cookie: `sessionId=${sessionId}` },
+    cache: "no-store",
   });
 
   if (!userRes.ok) redirect("/login");
   const userData = await userRes.json();
-  const user = userData.userId ? userData : null;
+  const user = (userData.id || userData.userId) ? userData : null;
   if (!user) redirect("/login");
 
   // Fetch Location & Spot
-  const locationRes = await fetch(`${process.env.BACKEND_URL}/api/parking/location`, {
+  const locationRes = await fetch(`${backendUrl}/api/parking/location`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id })
@@ -42,7 +45,7 @@ export default async function LocationDetailsPage({ params }: PageProps) {
   const { location: dbLocation, spot } = await locationRes.json();
   
   // Fetch Vehicles (Session-based)
-  const vehiclesRes = await fetch(`${process.env.BACKEND_URL}/api/vehicle`, {
+  const vehiclesRes = await fetch(`${backendUrl}/api/vehicle`, {
     headers: { Cookie: `sessionId=${sessionId}` }
   });
   const vehicles = await vehiclesRes.json();

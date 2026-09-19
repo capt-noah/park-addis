@@ -92,7 +92,8 @@ authRouter.post(
       });
 
       console.log("[AUTH] POST /login - User logged in successfully:", email);
-      return res.status(200).json({ user: validationResult.entity, sessionId });
+      const { passwordHash, ...safeUser } = validationResult.entity;
+      return res.status(200).json({ user: { ...safeUser, userId: safeUser.id }, sessionId });
     } catch (error: any) {
       console.log("[AUTH] POST /login - Login Error:", error.message);
       return res
@@ -113,8 +114,11 @@ authRouter.get("/me", authMiddleware, async (req, res) => {
     }
 
     console.log("[AUTH] GET /me - User info retrieved for:", user.email);
-    // User already has passwordHash stripped from auth service
-    return res.status(200).json(user);
+    // Return both id and userId for backwards compatibility
+    return res.status(200).json({
+      ...user,
+      userId: user.id || user.userId,
+    });
   } catch (error: any) {
     console.log("[AUTH] GET /me - Error:", error.message);
     return res

@@ -1,4 +1,4 @@
-import { pgTable, uniqueIndex, text, uuid, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, uniqueIndex, text, uuid, timestamp, integer, numeric } from "drizzle-orm/pg-core";
 
 export const parkingLocations = pgTable(
     "parking_locations",
@@ -8,6 +8,7 @@ export const parkingLocations = pgTable(
         address: text("address").notNull(),
         ratingsSum: integer("ratings_sum").default(0),
         ratingsCount: integer("ratings_count").default(0),
+        displayPricePerHour: numeric("display_price_per_hour", { precision: 10, scale: 2 }),
         geom: text("geom").notNull(),
         createdAt: timestamp("created_at").defaultNow()
     },

@@ -5,7 +5,7 @@ import { parkingLocations } from "../schema/parkingLocations";
 import { checkParkingAvailability, updateParkingAvailability } from "./parking.service";
 import { createPayment } from "./payment.service";
 import { vehicles } from "../schema/vehicles";
-import { eq, and, or, desc, inArray, ne } from "drizzle-orm";
+import { eq, and, or, desc, inArray, ne, sql, gt } from "drizzle-orm";
 import crypto from "crypto";
 import { payments } from "../schema/payments";
 import { reservationPayments } from "../schema/reservationPayments";
@@ -19,34 +19,49 @@ export async function reserveSpot(
   startTime: Date,
   endTime: Date,
 ) {
-  const isAvailable = await checkParkingAvailability(spotId);
-  if (!isAvailable) return null;
+  try {
+    const response = await db.transaction(async (tx) => {
+      // 1. Atomically decrement available slots ONLY if > 0
+      const updatedSpot = await tx
+        .update(parkingSpots)
+        .set({ availableSlots: sql`${parkingSpots.availableSlots} - 1` })
+        .where(and(eq(parkingSpots.id, spotId), gt(parkingSpots.availableSlots, 0)))
+        .returning()
+        .then((r) => r[0]);
 
-  const qrToken = crypto.randomUUID();
+      if (!updatedSpot) return null;
 
-  const response = await db
-    .insert(reservations)
-    .values({
-      userId,
-      spotId,
-      vehicleId,
-      startTime,
-      endTime,
-      qrToken,
-      status: "RESERVED",
-    })
-    .returning()
-    .then((r) => r[0]);
+      const qrToken = crypto.randomUUID();
 
-  if (!response) return null;
+      const createdReservation = await tx
+        .insert(reservations)
+        .values({
+          userId,
+          spotId,
+          vehicleId,
+          startTime,
+          endTime,
+          qrToken,
+          status: "RESERVED",
+        })
+        .returning()
+        .then((r) => r[0]);
 
-  if (response) {
-    // Decrement available slots on reservation
-    await updateParkingAvailability(spotId, 0, 1);
-    await invalidateActiveReservationCache(userId);
+      if (!createdReservation) {
+        throw new Error("Failed to create reservation");
+      }
+
+      return createdReservation;
+    });
+
+    if (response) {
+      await invalidateActiveReservationCache(userId);
+    }
+
+    return response;
+  } catch (error) {
+    return null;
   }
-
-  return response;
 }
 
 /** Payment display status is derived only from reservations.status. */

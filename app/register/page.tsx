@@ -76,8 +76,7 @@ export default function RegisterPage() {
     const data = await res.json();
 
     if (res.ok && data.ok) {
-      router.replace("/dashboard");
-      router.refresh();
+      window.location.href = "/dashboard";
     } else {
       setError(data.error || "Registration failed")
       setLoading(false)

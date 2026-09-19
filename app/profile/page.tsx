@@ -20,26 +20,28 @@ export default async function ProfilePage() {
   const sessionId = cookieStore.get("sessionId")?.value;
   if (!sessionId) redirect("/login");
 
+  const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:1000";
+
   // Fetch User
-  const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-    headers: { Cookie: `sessionId=${sessionId}` }
+  const userRes = await fetch(`${backendUrl}/api/auth/me`, {
+    headers: { Cookie: `sessionId=${sessionId}` },
+    cache: "no-store",
   });
 
   if (!userRes.ok) redirect("/login");
   const userData = await userRes.json();
-  const dbUser = userData.userId ? userData : null;
+  const dbUser = (userData.id || userData.userId) ? userData : null;
   if (!dbUser) redirect("/login");
 
-  // Fetch Vehicles
-  const vehiclesRes = await fetch(`${process.env.BACKEND_URL}/api/vehicle/user`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId: dbUser.userId })
+  // Fetch Vehicles (Session-based)
+  const vehiclesRes = await fetch(`${backendUrl}/api/vehicle`, {
+    headers: { Cookie: `sessionId=${sessionId}` },
+    cache: "no-store",
   });
   const userVehicles = await vehiclesRes.json();
 
   const user = {
-    userId: dbUser.userId,
+    userId: dbUser.id || dbUser.userId,
     fullName: dbUser.fullName,
     email: dbUser.email,
     phoneNumber: dbUser.phoneNumber,

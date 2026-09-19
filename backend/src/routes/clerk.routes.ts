@@ -50,7 +50,8 @@ clerkRouter.post("/login", async (req, res) => {
     });
 
     console.log("[CLERK] POST /login - Login successful for clerk:", result.entity.id);
-    return res.status(200).json({ user: result.entity, sessionId });
+    const { passwordHash, ...safeEmployee } = result.entity;
+    return res.status(200).json({ user: safeEmployee, sessionId });
   } catch (error: any) {
     console.log("[CLERK] POST /login - Error:", error.message);
     return res.status(500).json({ error: error.message });
@@ -88,7 +89,8 @@ clerkRouter.post("/register", async (req, res) => {
     });
 
     console.log("[CLERK] POST /register - Clerk registered:", newEmployee.id);
-    return res.status(201).json({ user: newEmployee, sessionId });
+    const { passwordHash, ...safeEmployee } = newEmployee;
+    return res.status(201).json({ user: safeEmployee, sessionId });
   } catch (error: any) {
     console.log("[CLERK] POST /register - Error:", error.message);
     return res.status(500).json({ error: error.message });
@@ -333,9 +335,10 @@ clerkRouter.post("/register-walkin", async (req, res) => {
       "[CLERK] POST /register-walkin - Walk-in registered:",
       result.user.id,
     );
+    const { passwordHash: _hash, ...safeWalkinUser } = result.user;
     return res.status(201).json({
       message: "Walk-in registered successfully",
-      user: result.user,
+      user: safeWalkinUser,
     });
   } catch (error: any) {
     console.log("[CLERK] POST /register-walkin - Error:", error.message);

@@ -32,8 +32,7 @@ export default function LoginPage() {
     
     if (res.ok) {
       showNotification("Login successful!", "success");
-      router.replace("/dashboard")
-      router.refresh()
+      window.location.href = "/dashboard";
     } else {
       const data = await res.json()
       const errorMsg = data.error || "Login failed";

@@ -7,7 +7,7 @@ export const walletTransactions = pgTable("wallet_transactions", {
     amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
     type: text('type').notNull(),
     status: text('status').notNull(),
-    referenceId: uuid('reference_id').notNull(),
+    referenceId: text('reference_id').notNull(),
     createdAt: timestamp('created_at').defaultNow(),
     completedAt: timestamp('completed_at').defaultNow()
 })

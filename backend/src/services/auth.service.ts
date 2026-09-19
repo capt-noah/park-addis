@@ -3,7 +3,7 @@ import { vehicles } from "../schema/vehicles";
 import { sessions } from "../schema/sessions";
 import { db } from "../db";
 import bcrypt from "bcrypt";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { wallets } from "../schema/wallets";
 import { employees } from "../schema/employees";
 import { admins } from "../schema/admins";
@@ -169,12 +169,13 @@ export async function findUserByPhone(phoneNumber: string) {
   const suffix = digits.slice(-9);
 
   if (suffix.length === 9) {
-    const allUsers = await db.select().from(users);
-    return (
-      allUsers.find((user) =>
-        normalizePhoneDigits(user.phoneNumber).endsWith(suffix),
-      ) ?? null
-    );
+    const matched = await db
+      .select()
+      .from(users)
+      .where(sql`${users.phoneNumber} LIKE ${`%${suffix}`}`)
+      .limit(1)
+      .then((rows) => rows[0]);
+    if (matched) return matched;
   }
 
   return null;
@@ -203,9 +204,10 @@ export async function findUserById(userId: string) {
   if (user) {
     const { passwordHash, ...userWithoutPassword } = user;
     await setuserCache(userId, userWithoutPassword);
+    return userWithoutPassword;
   }
 
-  return user ?? null;
+  return null;
 }
 
 /**

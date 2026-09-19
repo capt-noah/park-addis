@@ -133,7 +133,7 @@ parkingRouter.post("/range", async (req, res) => {
     if (!parkingWithinRange) {
       console.log("[PARKING] POST /range - No parking locations found");
       return res
-        .status(401)
+        .status(404)
         .json({ error: "No Available Parking Locations Found" });
     }
 
@@ -158,7 +158,7 @@ parkingRouter.post("/spot", async (req, res) => {
 
     if (!spot) {
       console.log("[PARKING] POST /spot - Spot not found:", spotId);
-      return res.status(301).json({ error: "Unable to Find Parking Spot" });
+      return res.status(404).json({ error: "Unable to Find Parking Spot" });
     }
 
     console.log("[PARKING] POST /spot - Spot retrieved successfully:", spotId);
@@ -177,7 +177,7 @@ parkingRouter.get("/locations", async (req, res) => {
 
     if (!featureCollection) {
       console.log("[PARKING] GET /locations - No locations found");
-      return res.status(401).json({ error: "Locations Not Found" });
+      return res.status(404).json({ error: "Locations Not Found" });
     }
 
     console.log(
@@ -202,7 +202,7 @@ parkingRouter.post("/location", async (req, res) => {
 
     if (!location) {
       console.log("[PARKING] POST /location - Location not found:", id);
-      return res.status(301).json({ error: "Unable to find Location" });
+      return res.status(404).json({ error: "Unable to find Location" });
     }
 
     console.log(

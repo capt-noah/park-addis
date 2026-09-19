@@ -26,9 +26,9 @@ vehicleRouter.get("/", authMiddleware, async (req, res) => {
 });
 
 // 2. Backward compatibility
-vehicleRouter.post("/user", async (req, res) => {
+vehicleRouter.post("/user", authMiddleware, async (req, res) => {
   try {
-    const { userId } = req.body;
+    const userId = res.locals.user?.id || req.body.userId;
     console.log("[VEHICLE] POST /user - Fetching vehicles for user:", userId);
 
     const vehicles = await getVehiclesByUserId(userId);

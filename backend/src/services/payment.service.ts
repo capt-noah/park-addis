@@ -6,6 +6,7 @@ import { reservations } from "../schema/reservations"
 
 import crypto from "crypto"
 import { users } from "../schema/users"
+import { invalidateActiveReservationCache } from "./cache/reservation-cache"
 
 
 export async function createPayment(qrToken: string, returnUrl?: string) {
@@ -35,11 +36,11 @@ export async function createPayment(qrToken: string, returnUrl?: string) {
 
     // Handle 0-cost or very low cost sessions (e.g. under 1 minute)
     if (rawAmount < 1.0) {
-
-        
         await db.update(reservations)
                 .set({ status: 'PAID' })
                 .where(eq(reservations.id, reservation.id));
+
+        await invalidateActiveReservationCache(reservation.userId);
 
         return { 
             status: 'success', 
@@ -63,9 +64,7 @@ export async function createPayment(qrToken: string, returnUrl?: string) {
 }
 
 export async function completePayment(transactionId: string) {
-    return await db.transaction(async (tx) => {
-
-        
+    const result = await db.transaction(async (tx) => {
         // 1. Update Payment record
         const [payment] = await tx.update(payments)
                 .set({ status: 'SUCCESS' })
@@ -73,18 +72,23 @@ export async function completePayment(transactionId: string) {
                 .returning();
 
         if (!payment) {
-
             return null;
         }
 
         // 2. Update Reservation record to PAID
-        await tx.update(reservations)
+        const [updatedRes] = await tx.update(reservations)
                 .set({ status: 'PAID' })
-                .where(eq(reservations.id, payment.reservationId));
+                .where(eq(reservations.id, payment.reservationId))
+                .returning();
 
-
-        return payment;
+        return { payment, updatedRes };
     });
+
+    if (result?.updatedRes) {
+        await invalidateActiveReservationCache(result.updatedRes.userId);
+    }
+
+    return result?.payment ?? null;
 }
 
 export async function failPayment(transactionId: string) {
@@ -113,6 +117,9 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
     // Chapa expects amount as string, often prefers 2 decimal places
     const formattedAmount = (typeof amount === 'number' ? amount : parseFloat(amount)).toFixed(2);
 
+    const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:1000";
+    const frontendUrl = process.env.FRONTEND_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
     const body = {
         amount: formattedAmount,
         currency: "ETB",
@@ -121,8 +128,8 @@ export async function initializeChapaPayment({amount, fullName, phone_number, em
         last_name,
         phone_number: formattedPhone,
         tx_ref,
-        callback_url: `${process.env.BACKEND_URL}/api/${paymentCallback}/callback`,
-        return_url: returnUrl || `${process.env.VERCEL_URL}/payment/success?tx_ref=${tx_ref}`,
+        callback_url: `${backendUrl}/api/${paymentCallback}/callback`,
+        return_url: returnUrl || `${frontendUrl}/payment/success?tx_ref=${tx_ref}`,
         "customization[title]": "Park Addis Payment",
         "customization[description]": "Parking Reservation Payment"
     };

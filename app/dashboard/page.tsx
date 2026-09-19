@@ -24,36 +24,55 @@ export default async function DashboardPage() {
 
   if (!sessionId) redirect("/login");
 
+  const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:1000";
+
   // Fetch User
-  const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-    headers: { Cookie: `sessionId=${sessionId}` }
+  const userRes = await fetch(`${backendUrl}/api/auth/me`, {
+    headers: { Cookie: `sessionId=${sessionId}` },
+    cache: "no-store",
   });
   
   if (!userRes.ok) redirect("/login");
   const userData = await userRes.json();
-  const dbUser = userData.userId ? userData : null;
+  const dbUser = (userData.id || userData.userId) ? userData : null;
   if (!dbUser) redirect("/login");
 
   const user = {
-    userId: dbUser.userId,
+    userId: dbUser.id || dbUser.userId,
     email: dbUser.email,
     fullName: dbUser.fullName,
     role: dbUser.role ?? "user",
   };
 
   // Fetch Reservations
-  const reservationsRes = await fetch(`${process.env.BACKEND_URL}/api/reservation`, {
-    headers: { Cookie: `sessionId=${sessionId}` }
-  });
-  const { reservations = [] } = await reservationsRes.json();
-  const allReservations = reservations;
+  let allReservations: any[] = [];
+  try {
+    const reservationsRes = await fetch(`${backendUrl}/api/reservation`, {
+      headers: { Cookie: `sessionId=${sessionId}` },
+      cache: "no-store",
+    });
+    if (reservationsRes.ok) {
+      const resJson = await reservationsRes.json();
+      allReservations = Array.isArray(resJson) ? resJson : (resJson.reservations || []);
+    }
+  } catch {
+    allReservations = [];
+  }
   const recentReservations = allReservations.slice(0, 4);
 
   // Fetch Active Session
-  const activeRes = await fetch(`${process.env.BACKEND_URL}/api/reservation/active`, {
-    headers: { Cookie: `sessionId=${sessionId}` }
-  });
-  const activeReservation = await activeRes.json();
+  let activeReservation: any = null;
+  try {
+    const activeRes = await fetch(`${backendUrl}/api/reservation/active`, {
+      headers: { Cookie: `sessionId=${sessionId}` },
+      cache: "no-store",
+    });
+    if (activeRes.ok) {
+      activeReservation = await activeRes.json();
+    }
+  } catch {
+    activeReservation = null;
+  }
 
   return (
     <DashboardLayout user={user}>

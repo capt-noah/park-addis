@@ -15,18 +15,21 @@ export default async function LocationsPage() {
 
   if (!sessionId) redirect("/login");
 
+  const backendUrl = process.env.BACKEND_URL || "http://127.0.0.1:1000";
+
   // Fetch User
-  const userRes = await fetch(`${process.env.BACKEND_URL}/api/auth/me`, {
-    headers: { Cookie: `sessionId=${sessionId}` }
+  const userRes = await fetch(`${backendUrl}/api/auth/me`, {
+    headers: { Cookie: `sessionId=${sessionId}` },
+    cache: "no-store",
   });
 
   if (!userRes.ok) redirect("/login");
   const userData = await userRes.json();
-  const dbUser = userData.userId ? userData : null;
+  const dbUser = (userData.id || userData.userId) ? userData : null;
   if (!dbUser) redirect("/login");
 
   const user = {
-    userId: dbUser.userId,
+    userId: dbUser.id || dbUser.userId,
     email: dbUser.email,
     fullName: dbUser.fullName,
     role: dbUser.role ?? "user",
@@ -37,7 +40,7 @@ export default async function LocationsPage() {
   const range = DEFAULT_RANGE;
 
   // Fetch Locations
-  const locationsRes = await fetch(`${process.env.BACKEND_URL}/api/parking/range`, {
+  const locationsRes = await fetch(`${backendUrl}/api/parking/range`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ range, coors: { lat, lng } })

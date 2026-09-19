@@ -1,4 +1,4 @@
-import { pgTable, uuid, uniqueIndex, timestamp, text } from "drizzle-orm/pg-core"
+import { pgTable, uuid, index, timestamp, text } from "drizzle-orm/pg-core"
 import { users } from "./users"
 import { parkingSpots } from "./parkingSpots"
 import { vehicles } from "./vehicles"
@@ -21,7 +21,8 @@ export const reservations = pgTable(
         createdAt: timestamp("created_at").defaultNow().notNull()
     },
     (table) => ({
-        reservationsUserIndex: uniqueIndex("idx_reservations_user_id").on(table.userId),
-        reservationsSpotIndex: uniqueIndex("idx_reservations_spot_id").on(table.spotId)
+        reservationsUserIndex: index("idx_reservations_user_id").on(table.userId),
+        reservationsSpotIndex: index("idx_reservations_spot_id").on(table.spotId),
+        reservationsStatusIndex: index("idx_reservations_status").on(table.status)
     })
 )
