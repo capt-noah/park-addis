@@ -4,12 +4,16 @@ import {
   validateUser,
   createSession,
   deleteSession,
+  toSafeUserDTO,
 } from "../services/auth.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { rateLimitMiddleware } from "../middleware/rate-limit.middleware";
+import { sanitizeError } from "../utils/errors";
 import "../utils/logger";
 
 const authRouter = express.Router();
+
+const isProduction = process.env.NODE_ENV === "production";
 
 authRouter.post(
   "/register",
@@ -17,29 +21,44 @@ authRouter.post(
   async (req, res) => {
     try {
       console.log(
-        "[AUTH] POST /register - New registration attempt from:",
-        req.body.email,
+        "[AUTH] POST /register - New registration attempt for:",
+        req.body?.email
       );
-      const { fullName, email, password, phoneNumber, role, car } = req.body;
+
+      const { fullName, email, password, phoneNumber, role, car } = req.body || {};
+
+      if (!fullName || !email || !password || !phoneNumber) {
+        return res.status(400).json({
+          error: "Full name, email, password, and phone number are required.",
+          code: "MISSING_REQUIRED_FIELDS",
+        });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({
+          error: "Password must be at least 6 characters long.",
+          code: "WEAK_PASSWORD",
+        });
+      }
+
       const { plateNumber, carModel, color } = car || {};
 
       const result = await registerAndSetupUser(
-        fullName,
-        email,
+        fullName.trim(),
+        email.trim().toLowerCase(),
         password,
-        phoneNumber,
-        role,
-        plateNumber,
-        carModel,
-        color,
+        phoneNumber.trim(),
+        role || "user",
+        plateNumber ? plateNumber.trim() : undefined,
+        carModel ? carModel.trim() : undefined,
+        color ? color.trim() : undefined
       );
 
       if (!result) {
-        console.log(
-          "[AUTH] POST /register - Registration failed for email:",
-          email,
-        );
-        return res.status(400).json({ error: "Unable To Create User" });
+        return res.status(400).json({
+          error: "Unable to complete registration. Please check your details.",
+          code: "REGISTRATION_FAILED",
+        });
       }
 
       const { user, sessionId } = result;
@@ -48,22 +67,27 @@ authRouter.post(
         httpOnly: true,
         sameSite: "lax",
         path: "/",
+        secure: isProduction,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      console.log(
-        "[AUTH] POST /register - User registered successfully:",
-        email,
-      );
-      return res
-        .status(201)
-        .json({ ok: true, message: "User Created Successfully", sessionId });
+      console.log("[AUTH] POST /register - Successfully registered:", email);
+
+      return res.status(201).json({
+        ok: true,
+        message: "User registered successfully.",
+        user,
+        sessionId,
+      });
     } catch (error: any) {
-      console.log("[AUTH] POST /register - Registration Error:", error.message);
-      return res
-        .status(500)
-        .json({ error: error.message || "Internal Server Error" });
+      const sanitized = sanitizeError(error);
+      console.error("[AUTH] POST /register - Registration Error:", error?.message || error);
+      return res.status(sanitized.statusCode).json({
+        error: sanitized.error,
+        code: sanitized.code,
+      });
     }
-  },
+  }
 );
 
 authRouter.post(
@@ -71,90 +95,113 @@ authRouter.post(
   rateLimitMiddleware("login", 10, 900),
   async (req, res) => {
     try {
-      console.log("[AUTH] POST /login - Login attempt from:", req.body.email);
-      const { email, password } = req.body;
-      const validationResult = await validateUser(email, password);
+      console.log("[AUTH] POST /login - Login attempt for:", req.body?.email);
+      const { email, password } = req.body || {};
 
-      if (!validationResult) {
-        console.log(
-          "[AUTH] POST /login - Invalid credentials for email:",
-          email,
-        );
-        return res.status(401).json({ error: "Invalid Credentials" });
+      if (!email || !password) {
+        return res.status(400).json({
+          error: "Email and password are required.",
+          code: "MISSING_CREDENTIALS",
+        });
       }
 
-      const sessionId = await createSession(validationResult.entity.id, validationResult.type);
+      const validationResult = await validateUser(
+        String(email).trim().toLowerCase(),
+        String(password)
+      );
+
+      if (!validationResult) {
+        console.log("[AUTH] POST /login - Invalid credentials for email:", email);
+        return res.status(401).json({
+          error: "Invalid email or password.",
+          code: "INVALID_CREDENTIALS",
+        });
+      }
+
+      const safeUser = toSafeUserDTO(validationResult.entity);
+      const sessionId = await createSession(safeUser.id, validationResult.type);
 
       res.cookie("sessionId", sessionId, {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
+        secure: isProduction,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
-      console.log("[AUTH] POST /login - User logged in successfully:", email);
-      const { passwordHash, ...safeUser } = validationResult.entity;
-      return res.status(200).json({ user: { ...safeUser, userId: safeUser.id }, sessionId });
+      console.log("[AUTH] POST /login - Successfully logged in:", email);
+
+      return res.status(200).json({
+        ok: true,
+        user: safeUser,
+        sessionId,
+      });
     } catch (error: any) {
-      console.log("[AUTH] POST /login - Login Error:", error.message);
-      return res
-        .status(500)
-        .json({ error: error.message || "Internal Server Error" });
+      const sanitized = sanitizeError(error);
+      console.error("[AUTH] POST /login - Login Error:", error?.message || error);
+      return res.status(sanitized.statusCode).json({
+        error: sanitized.error,
+        code: sanitized.code,
+      });
     }
-  },
+  }
 );
 
 authRouter.get("/me", authMiddleware, async (req, res) => {
   try {
-    console.log("[AUTH] GET /me - Fetching current user info");
     const user = res.locals.user;
-
     if (!user) {
-      console.log("[AUTH] GET /me - Unauthorized access attempt");
-      return res.status(401).json({ error: "Unauthorized User" });
+      return res.status(401).json({
+        error: "Unauthorized access.",
+        code: "UNAUTHORIZED",
+      });
     }
 
-    console.log("[AUTH] GET /me - User info retrieved for:", user.email);
-    // Return both id and userId for backwards compatibility
-    return res.status(200).json({
-      ...user,
-      userId: user.id || user.userId,
-    });
+    const safeUser = toSafeUserDTO(user);
+
+    return res.status(200).json(safeUser);
   } catch (error: any) {
-    console.log("[AUTH] GET /me - Error:", error.message);
-    return res
-      .status(500)
-      .json({ error: error.message || "Internal Server Error" });
+    const sanitized = sanitizeError(error);
+    console.error("[AUTH] GET /me - Error:", error?.message || error);
+    return res.status(sanitized.statusCode).json({
+      error: sanitized.error,
+      code: sanitized.code,
+    });
   }
 });
 
 authRouter.get("/logout", async (req, res) => {
   try {
-    console.log("[AUTH] GET /logout - User logout request");
     let sessionId = req.cookies?.sessionId;
     if (!sessionId && req.headers.authorization) {
       const authHeader = req.headers.authorization;
-      if (authHeader.startsWith("Bearer ")) sessionId = authHeader.substring(7);
+      if (authHeader.startsWith("Bearer ")) {
+        sessionId = authHeader.substring(7);
+      }
     }
 
     if (sessionId) {
       await deleteSession(sessionId);
-      console.log("[AUTH] GET /logout - Session deleted");
     }
 
     res.clearCookie("sessionId", {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
+      secure: isProduction,
     });
-    console.log("[AUTH] GET /logout - User logged out successfully");
-    return res
-      .status(200)
-      .json({ ok: true, message: "Logged out successfully" });
+
+    return res.status(200).json({
+      ok: true,
+      message: "Logged out successfully.",
+    });
   } catch (error: any) {
-    console.log("[AUTH] GET /logout - Logout Error:", error.message);
-    return res
-      .status(500)
-      .json({ error: error.message || "Internal Server Error" });
+    const sanitized = sanitizeError(error);
+    console.error("[AUTH] GET /logout - Logout Error:", error?.message || error);
+    return res.status(sanitized.statusCode).json({
+      error: sanitized.error,
+      code: sanitized.code,
+    });
   }
 });
 

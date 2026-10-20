@@ -7,10 +7,95 @@ import { eq, sql } from "drizzle-orm";
 import { wallets } from "../schema/wallets";
 import { employees } from "../schema/employees";
 import { admins } from "../schema/admins";
-
 import { getCachedUser, setuserCache } from "./cache/user-cache";
-
 import Decimal from "decimal.js";
+import { randomUUID } from "crypto";
+
+export interface SafeUserDTO {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  userType?: "user" | "employee" | "admin";
+  createdAt: string | Date | null;
+}
+
+export function toSafeUserDTO(rawUser: any): SafeUserDTO {
+  if (!rawUser) return null as any;
+  const id = rawUser.id || rawUser.userId;
+  return {
+    id,
+    userId: id,
+    fullName: rawUser.fullName || rawUser.name || "",
+    email: rawUser.email || "",
+    phoneNumber: rawUser.phoneNumber || "",
+    role: rawUser.role || "user",
+    userType: rawUser.userType || "user",
+    createdAt: rawUser.createdAt || null,
+  };
+}
+
+export interface SafeEmployeeDTO {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  status: string | null;
+  role: string;
+  userType: "employee";
+  assignedLocationId?: string | null;
+  shiftStartTime?: string | null;
+  shiftEndTime?: string | null;
+  createdAt: string | Date | null;
+}
+
+export function toSafeEmployeeDTO(raw: any): SafeEmployeeDTO {
+  if (!raw) return null as any;
+  const id = raw.id || raw.userId;
+  return {
+    id,
+    userId: id,
+    fullName: raw.fullName || "",
+    email: raw.email || "",
+    phoneNumber: raw.phoneNumber || "",
+    status: raw.status || "ACTIVE",
+    role: raw.role || "employee",
+    userType: "employee",
+    assignedLocationId: raw.assignedLocationId || null,
+    shiftStartTime: raw.shiftStartTime || null,
+    shiftEndTime: raw.shiftEndTime || null,
+    createdAt: raw.createdAt || null,
+  };
+}
+
+export interface SafeAdminDTO {
+  id: string;
+  userId: string;
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  userType: "admin";
+  createdAt: string | Date | null;
+}
+
+export function toSafeAdminDTO(raw: any): SafeAdminDTO {
+  if (!raw) return null as any;
+  const id = raw.id || raw.userId;
+  return {
+    id,
+    userId: id,
+    fullName: raw.fullName || "",
+    email: raw.email || "",
+    phoneNumber: raw.phoneNumber || "",
+    role: raw.role || "admin",
+    userType: "admin",
+    createdAt: raw.createdAt || null,
+  };
+}
 
 export async function registerAndSetupUser(
   fullName: string,
@@ -18,9 +103,9 @@ export async function registerAndSetupUser(
   password: string,
   phoneNumber: string,
   role: string,
-  plateNumber: string,
-  carModel: string,
-  color: string,
+  plateNumber?: string,
+  carModel?: string,
+  color?: string,
 ) {
   const passwordHash = await bcrypt.hash(password, 10);
 
@@ -28,35 +113,38 @@ export async function registerAndSetupUser(
     // 1. Create User
     const userArr = await tx
       .insert(users)
-      .values({ fullName, email, passwordHash, phoneNumber, role })
+      .values({ fullName, email, passwordHash, phoneNumber, role: role || "user" })
       .returning();
-    const user = userArr[0];
+    const rawUser = userArr[0];
 
     // 2. Conditional Vehicle Creation (only if driver and plate provided)
     if (role === "driver" && plateNumber) {
       await tx
         .insert(vehicles)
-        .values({ userId: user.id, plateNumber, carModel, color })
+        .values({
+          userId: rawUser.id,
+          plateNumber,
+          carModel: carModel || "Standard",
+          color: color || "Unknown",
+        })
         .returning();
     }
 
     // 3. Create Wallet
     const balance = new Decimal("0").toString();
-    await tx.insert(wallets).values({ userId: user.id, balance }).returning();
+    await tx.insert(wallets).values({ userId: rawUser.id, balance }).returning();
 
     // 4. Create Session
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const sessionArr = await tx
       .insert(sessions)
-      .values({ userId: user.id, expiresAt })
+      .values({ userId: rawUser.id, expiresAt })
       .returning();
 
-    if (user) {
-      const { passwordHash, ...userWithoutPassword } = user;
-      await setuserCache(user.id, userWithoutPassword);
-    }
+    const safeUser = toSafeUserDTO(rawUser);
+    await setuserCache(rawUser.id, safeUser);
 
-    return { user, sessionId: sessionArr[0].id };
+    return { user: safeUser, sessionId: sessionArr[0].id };
   });
 
   return result;
@@ -87,7 +175,7 @@ export async function registerEmployee(
     })
     .returning();
 
-  return employeeArr[0];
+  return toSafeEmployeeDTO(employeeArr[0]);
 }
 
 export async function registerAdmin(
@@ -102,7 +190,7 @@ export async function registerAdmin(
     .values({ fullName, email, passwordHash, phoneNumber, role: "admin" })
     .returning();
 
-  return adminArr[0];
+  return toSafeAdminDTO(adminArr[0]);
 }
 
 export async function registerVehicle(
@@ -191,9 +279,11 @@ export async function findUserByEmailOrPhone(payload: {
 }
 
 export async function findUserById(userId: string) {
-  const cache = await getCachedUser(userId);
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!userId || !uuidRegex.test(userId)) return null;
 
-  if (cache) return cache;
+  const cache = await getCachedUser(userId);
+  if (cache) return toSafeUserDTO(cache);
 
   const user = await db
     .select()
@@ -202,29 +292,33 @@ export async function findUserById(userId: string) {
     .then((r) => r[0]);
 
   if (user) {
-    const { passwordHash, ...userWithoutPassword } = user;
-    await setuserCache(userId, userWithoutPassword);
-    return userWithoutPassword;
+    const safeUser = toSafeUserDTO(user);
+    await setuserCache(userId, safeUser);
+    return safeUser;
   }
 
   return null;
 }
 
 /**
- * Validates a Driver/Standard User. ONLY checks the 'users' table.
+ * Validates a Driver/Standard User.
+ * Strips passwordHash immediately upon verification.
  */
 export async function validateUser(email: string, password: string) {
   const user = await findUserByEmail(email);
   if (!user) return false;
 
   const isValid = await bcrypt.compare(password, user.passwordHash);
-  if (isValid) return { entity: user, type: "user" as const };
+  if (isValid) {
+    return { entity: toSafeUserDTO(user), type: "user" as const };
+  }
 
   return false;
 }
 
 /**
- * Validates an Employee/Clerk. ONLY checks the 'employees' table.
+ * Validates an Employee/Clerk.
+ * Strips passwordHash immediately upon verification.
  */
 export async function validateEmployee(email: string, password: string) {
   const employee = await db
@@ -235,13 +329,16 @@ export async function validateEmployee(email: string, password: string) {
   if (!employee) return false;
 
   const isValid = await bcrypt.compare(password, employee.passwordHash);
-  if (isValid) return { entity: employee, type: "employee" as const };
+  if (isValid) {
+    return { entity: toSafeEmployeeDTO(employee), type: "employee" as const };
+  }
 
   return false;
 }
 
 /**
- * Validates a System Admin. ONLY checks the 'admins' table.
+ * Validates a System Admin.
+ * Strips passwordHash immediately upon verification.
  */
 export async function validateAdmin(email: string, password: string) {
   const admin = await db
@@ -252,7 +349,9 @@ export async function validateAdmin(email: string, password: string) {
   if (!admin) return false;
 
   const isValid = await bcrypt.compare(password, admin.passwordHash);
-  if (isValid) return { entity: admin, type: "admin" as const };
+  if (isValid) {
+    return { entity: toSafeAdminDTO(admin), type: "admin" as const };
+  }
 
   return false;
 }
@@ -274,12 +373,14 @@ export async function createSession(
 }
 
 export async function deleteSession(sessionId: string) {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!sessionId || !uuidRegex.test(sessionId)) return false;
+
   const isDeleted = await db.delete(sessions).where(eq(sessions.id, sessionId));
-  return isDeleted ?? false;
+  return Boolean(isDeleted);
 }
 
 export async function findSession(id: string) {
-  // Guard: Postgres UUID columns throw on non-UUID strings
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   if (!id || !uuidRegex.test(id)) return null;
 
@@ -293,12 +394,11 @@ export async function findSession(id: string) {
 
 export async function findUserBySession(id: string) {
   const userSession = await findSession(id);
-
   if (!userSession) return false;
 
   if (userSession.userId) {
     const user = await findUserById(userSession.userId);
-    return user ? { ...user, userType: "user" } : false;
+    return user ? { ...user, userType: "user" as const } : false;
   } else if (userSession.employeeId) {
     const employee = await db
       .select()
@@ -306,8 +406,7 @@ export async function findUserBySession(id: string) {
       .where(eq(employees.id, userSession.employeeId))
       .then((r) => r[0]);
     if (employee) {
-      const { passwordHash, ...employeeWithoutPassword } = employee;
-      return { ...employeeWithoutPassword, userType: "employee" };
+      return toSafeEmployeeDTO(employee);
     }
   } else if (userSession.adminId) {
     const admin = await db
@@ -316,8 +415,7 @@ export async function findUserBySession(id: string) {
       .where(eq(admins.id, userSession.adminId))
       .then((r) => r[0]);
     if (admin) {
-      const { passwordHash, ...adminWithoutPassword } = admin;
-      return { ...adminWithoutPassword, userType: "admin" };
+      return toSafeAdminDTO(admin);
     }
   }
 

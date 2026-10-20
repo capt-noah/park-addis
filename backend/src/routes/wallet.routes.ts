@@ -11,6 +11,7 @@ import {
 } from "../services/wallet.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { verifyChapaPayment } from "../services/payment.service";
+import { sanitizeError } from "../utils/errors";
 import "../utils/logger";
 
 const walletRouter = express.Router();
@@ -115,7 +116,8 @@ walletRouter.post("/topup", authMiddleware, async (req, res) => {
     return res.status(200).json(topupRes);
   } catch (error: any) {
     console.log("[WALLET] POST /topup - Error:", error.message);
-    return res.status(500).json({ error: error.message || "Top-up failed" });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 
@@ -155,7 +157,8 @@ walletRouter.all("/callback", async (req, res) => {
     return res.status(400).json({ error: "Payment Failed" });
   } catch (error: any) {
     console.log("[WALLET] /callback - Error:", error.message);
-    return res.status(500).json({ error: error.message });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 

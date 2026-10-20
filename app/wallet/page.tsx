@@ -1,6 +1,7 @@
 "use client";
 
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { Skeleton } from "@/components/Skeleton";
 import { 
   Wallet, 
   PlusCircle, 
@@ -62,6 +63,7 @@ export default function WalletPage() {
       // 1. Get User
       const userRes = await fetch("/api/auth/me");
       if (!userRes.ok) throw new Error("Auth failed");
+      const userData = await userRes.json();
       const currentUserId = userData.id || userData.userId;
       setUserId(currentUserId);
       setUserName(userData.fullName?.toUpperCase() || "NOAH SAMUEL");
@@ -164,25 +166,25 @@ export default function WalletPage() {
         <div className="flex flex-col gap-8 pb-10">
           {/* Skeleton Header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-            <div className="h-10 w-48 bg-muted animate-pulse rounded-2xl" />
-            <div className="h-12 w-40 bg-muted animate-pulse rounded-2xl" />
+            <Skeleton className="h-10 w-48 rounded-2xl" />
+            <Skeleton className="h-12 w-40 rounded-2xl" />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
             {/* Skeleton Balance Card */}
-            <div className="h-[260px] bg-muted animate-pulse rounded-[32px]" />
+            <Skeleton className="h-[260px] rounded-[32px]" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
-              <div className="h-[120px] bg-muted animate-pulse rounded-[28px]" />
-              <div className="h-[120px] bg-muted animate-pulse rounded-[28px]" />
+              <Skeleton className="h-[120px] rounded-[28px]" />
+              <Skeleton className="h-[120px] rounded-[28px]" />
             </div>
           </div>
 
           {/* Skeleton Transactions Area */}
           <div className="bg-card rounded-3xl p-6 border border-border shadow-sm mt-4">
-             <div className="h-8 w-48 bg-muted animate-pulse rounded-lg mb-8" />
+             <Skeleton className="h-8 w-48 rounded-lg mb-8" />
              <div className="space-y-4">
                {[1, 2, 3, 4, 5].map((i) => (
-                 <div key={i} className="h-16 w-full bg-muted animate-pulse rounded-xl" />
+                 <Skeleton key={i} className="h-16 w-full rounded-xl" />
                ))}
              </div>
           </div>

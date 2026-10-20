@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Star, MapPin, Clock } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { ParkingFeatures } from "@/types/geojson";
@@ -50,10 +49,25 @@ export default function Locations({ locationsData, selectedLocationId, setSelect
               <div className={`bg-card/90 dark:bg-card/70 backdrop-blur-xl border rounded-3xl p-3 flex gap-3 h-[150px] ${
                 selectedLocationId === loc.properties.id ? 'border-primary' : 'border-border/50'
               }`}>
-                {/* Image Section */}
-                <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden bg-white p-1 border border-border flex-shrink-0 self-center">
-                  <div className="relative w-full h-full rounded-xl overflow-hidden">
-                    <Image src="/bole.png" alt={loc.properties.name} fill className="object-cover" />
+                {/* Smart Hub Visual Badge */}
+                <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950 p-2.5 border border-primary/30 flex-shrink-0 self-center flex flex-col justify-between items-center text-center shadow-md relative group-hover:border-primary transition-colors">
+                  <div className="w-full flex items-center justify-between">
+                    <span className="text-[9px] font-mono font-black text-emerald-400">
+                      {loc.properties.name.split(" ")[0].toUpperCase().slice(0, 4)}
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  </div>
+                  
+                  <div className="relative flex items-center justify-center">
+                    <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/40 flex items-center justify-center text-emerald-400 font-mono font-black text-base shadow-inner">
+                      P
+                    </div>
+                  </div>
+
+                  <div className="w-full text-center">
+                    <span className="text-[8px] font-mono uppercase font-bold text-emerald-300/80 tracking-wider">
+                      SMART HUB
+                    </span>
                   </div>
                 </div>
 

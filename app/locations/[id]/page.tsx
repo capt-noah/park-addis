@@ -55,7 +55,7 @@ export default async function LocationDetailsPage({ params }: PageProps) {
     id: dbLocation.id,
     name: dbLocation.name,
     address: dbLocation.address,
-    image: "/bole.png", // Default placeholder
+    image: "",
     price: spot ? parseFloat(spot.pricePerHour) : 25,
     rating:
       dbLocation.ratingsCount && dbLocation.ratingsCount > 0

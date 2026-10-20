@@ -1,3 +1,4 @@
+import "dotenv/config";
 import "./utils/logger";
 import express from "express";
 import cors from "cors";
@@ -11,6 +12,7 @@ import walletRouter from "./routes/wallet.routes";
 import vehicleRouter from "./routes/vehicle.routes";
 import clerkRouter from "./routes/clerk.routes";
 import adminRouter from "./routes/admin.routes";
+import { globalErrorHandler } from "./utils/errors";
 
 app.use(cors({
   origin: ["http://localhost:3000", "https://park-addis.vercel.app"],
@@ -37,6 +39,9 @@ app.use('/api/admin', adminRouter)
 app.get('/', async (req, res) => {
   res.send('Hello from ParkAddis')
 })
+
+// Centralized error handling middleware
+app.use(globalErrorHandler);
 
 app.listen(process.env.PORT, () => console.log(`listening for parkaddis backend...`))
 

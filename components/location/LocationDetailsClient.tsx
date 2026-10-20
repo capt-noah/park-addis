@@ -9,8 +9,10 @@ import {
   UserRound,
   Plus,
   Minus,
+  Navigation,
+  Radio,
+  ExternalLink,
 } from "lucide-react";
-import Image from "next/image";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useState, useEffect } from "react";
@@ -51,6 +53,7 @@ export default function LocationDetailsClient({
   const [selectedVehicle, setSelectedVehicle] = useState<any>(
     initialVehicles[0] || null,
   );
+  const [mapZoom, setMapZoom] = useState(1);
 
   // Fetch wallet balance on mount
   useEffect(() => {
@@ -235,42 +238,49 @@ export default function LocationDetailsClient({
       <main className="pt-20 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
           {/* Hero Section */}
-          <div className="relative h-[450px] w-full rounded-[3rem] overflow-hidden mb-12 shadow-2xl shadow-emerald-900/5 group">
-            <Image
-              src="/map-light.png"
-              alt="Map Light"
-              fill
-              className="object-cover opacity-20 dark:hidden"
-            />
-            <Image
-              src="/map-dark.png"
-              alt="Map Dark"
-              fill
-              className="object-cover opacity-20 hidden dark:block"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
-
-            <div className="absolute inset-x-0 bottom-0 p-12 z-20 flex flex-col items-center text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold mb-6 border border-primary/20 backdrop-blur-sm">
-                <CheckCircle2 className="w-4 h-4" /> Verified Location
-              </div>
-              <h1 className="text-4xl md:text-5xl font-extrabold text-primary mb-4 tracking-tight">
-                {location.name}
-              </h1>
-              <div className="flex items-center gap-2 text-muted-foreground font-bold">
-                <MapPin className="w-5 h-5 text-muted-foreground/60" />{" "}
-                {location.address}
-              </div>
+          <div className="relative h-[340px] md:h-[380px] w-full rounded-[2.5rem] overflow-hidden mb-12 shadow-2xl shadow-emerald-900/5 group border border-border/50 bg-gradient-to-br from-card via-card/95 to-muted/40 flex flex-col justify-center items-center text-center p-8">
+            {/* Ambient Technical Transit Pattern */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+              <svg className="w-full h-full opacity-[0.14] dark:opacity-[0.20]" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="hub-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="1" className="text-primary" />
+                    <circle cx="20" cy="20" r="1.5" fill="currentColor" className="text-primary/60" />
+                  </pattern>
+                  <radialGradient id="hub-radial-glow" cx="50%" cy="50%" r="55%">
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.22" />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
+                  </radialGradient>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hub-grid)" />
+                <circle cx="50%" cy="50%" r="50%" fill="url(#hub-radial-glow)" />
+              </svg>
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent z-10" />
             </div>
 
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-card rounded-[2rem] border border-border shadow-2xl p-2 z-15 rotate-1">
-              <div className="w-full h-full rounded-[1.5rem] overflow-hidden relative border border-border flex items-center justify-center bg-primary/5">
-                <Image
-                  src={location.image}
-                  alt="Parking"
-                  fill
-                  className="object-cover opacity-90"
-                />
+            <div className="relative z-20 max-w-3xl flex flex-col items-center">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 text-primary dark:text-emerald-400 rounded-full text-xs font-bold mb-4 border border-primary/20 backdrop-blur-sm shadow-sm">
+                <CheckCircle2 className="w-4 h-4" /> Official Verified Smart Hub
+              </div>
+              <h1 className="text-3xl sm:text-5xl font-black text-foreground mb-3 tracking-tight">
+                {location.name}
+              </h1>
+              <div className="flex items-center gap-2 text-muted-foreground font-semibold text-sm sm:text-base mb-6">
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <span>{location.address}</span>
+              </div>
+
+              {/* Live Hub Features Pills */}
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <span className="px-3 py-1 bg-card/90 backdrop-blur-md rounded-xl text-xs font-mono font-bold text-foreground border border-border shadow-sm">
+                  ⚡ FAST-PASS 0.2s Gate
+                </span>
+                <span className="px-3 py-1 bg-card/90 backdrop-blur-md rounded-xl text-xs font-mono font-bold text-foreground border border-border shadow-sm">
+                  🛡 24/7 CCTV & Security
+                </span>
+                <span className="px-3 py-1 bg-card/90 backdrop-blur-md rounded-xl text-xs font-mono font-bold text-foreground border border-border shadow-sm">
+                  📍 Addis Ababa
+                </span>
               </div>
             </div>
           </div>
@@ -338,41 +348,155 @@ export default function LocationDetailsClient({
                 </ul>
               </div>
 
-              {/* Map View */}
+              {/* Interactive Vector Radar Map View */}
               <div>
-                <h2 className="text-2xl font-extrabold text-foreground mb-8">
-                  Location
-                </h2>
-                <div className="h-[400px] w-full bg-muted rounded-[2.5rem] border border-border overflow-hidden relative">
-                  <Image
-                    src="/map-light.png"
-                    alt="Mini Map Light"
-                    fill
-                    className="object-cover opacity-50 dark:hidden"
-                  />
-                  <Image
-                    src="/map-dark.png"
-                    alt="Mini Map Dark"
-                    fill
-                    className="object-cover opacity-30 hidden dark:block"
-                  />
-                  <div className="absolute top-6 left-6 bg-card px-5 py-2.5 rounded-2xl shadow-xl font-bold text-sm text-foreground border border-border">
-                    {location.address}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-extrabold text-foreground tracking-tight">
+                      Location Telemetry
+                    </h2>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                      PRECISION URBAN MOBILITY RADAR • {location.name.toUpperCase()}
+                    </p>
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${location.name}, ${location.address}, Addis Ababa`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold text-foreground hover:bg-muted hover:border-primary/40 transition-colors shadow-sm"
+                  >
+                    <span>Open in Maps</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-primary" />
+                  </a>
+                </div>
+
+                <div className="h-[420px] w-full bg-slate-950 rounded-[2.5rem] border border-border/80 overflow-hidden relative shadow-2xl flex items-center justify-center select-none group">
+                  {/* Radar Grid Canvas */}
+                  <div
+                    className="absolute inset-0 transition-transform duration-500 ease-out flex items-center justify-center pointer-events-none"
+                    style={{ transform: `scale(${mapZoom})` }}
+                  >
+                    {/* SVG Concentric Rings and Crosshairs */}
+                    <svg
+                      className="w-[600px] h-[600px] text-emerald-500/20"
+                      viewBox="0 0 600 600"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      {/* Grid Pattern */}
+                      <defs>
+                        <pattern id="radar-subgrid" width="30" height="30" patternUnits="userSpaceOnUse">
+                          <path d="M 30 0 L 0 0 0 30" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-emerald-500/10" />
+                        </pattern>
+                        <radialGradient id="radar-glow" cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                          <stop offset="60%" stopColor="#10b981" stopOpacity="0.05" />
+                          <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                        </radialGradient>
+                      </defs>
+
+                      <rect width="600" height="600" fill="url(#radar-subgrid)" />
+                      <circle cx="300" cy="300" r="280" fill="url(#radar-glow)" />
+
+                      {/* Concentric Clearance Ranges */}
+                      <circle cx="300" cy="300" r="240" stroke="currentColor" strokeWidth="1" strokeDasharray="4 4" className="text-emerald-500/20" />
+                      <circle cx="300" cy="300" r="180" stroke="currentColor" strokeWidth="1" className="text-emerald-500/30" />
+                      <circle cx="300" cy="300" r="120" stroke="currentColor" strokeWidth="1" strokeDasharray="3 3" className="text-emerald-500/40" />
+                      <circle cx="300" cy="300" r="60" stroke="currentColor" strokeWidth="1.5" className="text-emerald-500/60" />
+
+                      {/* Axes */}
+                      <line x1="300" y1="20" x2="300" y2="580" stroke="currentColor" strokeWidth="1" className="text-emerald-500/25" />
+                      <line x1="20" y1="300" x2="580" y2="300" stroke="currentColor" strokeWidth="1" className="text-emerald-500/25" />
+
+                      {/* Cardinal markers */}
+                      <text x="305" y="40" fill="#10b981" fontSize="10" fontFamily="monospace" fontWeight="bold">N 000°</text>
+                      <text x="545" y="295" fill="#10b981" fontSize="10" fontFamily="monospace" fontWeight="bold">E 090°</text>
+                      <text x="305" y="575" fill="#10b981" fontSize="10" fontFamily="monospace" fontWeight="bold">S 180°</text>
+                      <text x="30" y="295" fill="#10b981" fontSize="10" fontFamily="monospace" fontWeight="bold">W 270°</text>
+
+                      {/* Range annotations */}
+                      <text x="308" y="185" fill="#6ee7b7" fontSize="9" fontFamily="monospace" opacity="0.6">100m</text>
+                      <text x="308" y="245" fill="#6ee7b7" fontSize="9" fontFamily="monospace" opacity="0.6">50m</text>
+
+                      {/* Simulated Ingress Vector Lane */}
+                      <path
+                        d="M 120 420 Q 220 380 300 300"
+                        stroke="#10b981"
+                        strokeWidth="2"
+                        strokeDasharray="6 4"
+                        fill="none"
+                        className="animate-pulse"
+                      />
+                      <polygon points="296,303 302,297 305,306" fill="#10b981" />
+                    </svg>
                   </div>
 
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <div className="w-16 h-16 bg-primary flex items-center justify-center rounded-[1.5rem] shadow-2xl shadow-primary/50 border-[6px] border-card animate-bounce-slow">
-                      <ParkingCircle className="w-6 h-6 text-white" />
+                  {/* Top Address & Telemetry HUD */}
+                  <div className="absolute top-5 left-5 right-5 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+                    <div className="bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-emerald-500/30 shadow-xl flex items-center gap-2.5">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold text-white tracking-wide">
+                          {location.name}
+                        </p>
+                        <p className="text-[10px] font-mono text-emerald-400">
+                          {location.address}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="hidden sm:flex items-center gap-2 bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300">
+                      <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+                      <span>IOT ULTRASONIC SENSORS ONLINE</span>
                     </div>
                   </div>
 
-                  <div className="absolute right-6 bottom-6 flex flex-col gap-2">
-                    <button className="w-10 h-10 bg-card rounded-xl shadow-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                      <Plus className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                    <button className="w-10 h-10 bg-card rounded-xl shadow-lg border border-border flex items-center justify-center hover:bg-muted transition-colors">
-                      <Minus className="w-4 h-4 text-muted-foreground" />
-                    </button>
+                  {/* Center Target Hub Pin */}
+                  <div className="relative z-10 flex flex-col items-center pointer-events-none">
+                    <div className="relative">
+                      <div className="w-16 h-16 bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center rounded-2xl shadow-2xl shadow-emerald-500/50 border-4 border-slate-950 text-white font-black text-xl animate-bounce-slow">
+                        P
+                      </div>
+                      <div className="absolute -inset-2 rounded-2xl border-2 border-emerald-400/50 animate-ping opacity-30 pointer-events-none" />
+                    </div>
+                    <div className="mt-2.5 bg-slate-900/95 border border-emerald-500/40 px-3 py-1 rounded-full shadow-lg">
+                      <span className="text-[10px] font-mono font-bold text-emerald-300 uppercase tracking-wider">
+                        FAST-PASS CLEARANCE GATE
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Telemetry & Navigation Controls */}
+                  <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between gap-4">
+                    <div className="bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-400 flex items-center gap-3">
+                      <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>
+                        LAT {(location.lat ?? 9.0222).toFixed(4)}° N • LNG {(location.lng ?? 38.7468).toFixed(4)}° E
+                      </span>
+                    </div>
+
+                    {/* Interactive Zoom Controls */}
+                    <div className="flex flex-col gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setMapZoom((prev) => Math.min(1.5, prev + 0.15))}
+                        aria-label="Zoom in radar"
+                        className="w-9 h-9 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-xl shadow-lg flex items-center justify-center transition-colors active:scale-95"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMapZoom((prev) => Math.max(0.8, prev - 0.15))}
+                        aria-label="Zoom out radar"
+                        className="w-9 h-9 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-200 rounded-xl shadow-lg flex items-center justify-center transition-colors active:scale-95"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

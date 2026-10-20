@@ -10,8 +10,6 @@ import {
   ShieldUser,
   ExternalLink,
 } from "lucide-react";
-import Image from "next/image";
-
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 
@@ -54,6 +52,16 @@ export default async function ProfilePage() {
       : "Oct 2021",
   };
 
+  const initials = user.fullName
+    ? user.fullName
+        .split(" ")
+        .filter(Boolean)
+        .map((n: string) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "PA";
+
   return (
     <DashboardLayout user={user}>
       <div className="max-w-5xl mx-auto space-y-6">
@@ -65,13 +73,11 @@ export default async function ProfilePage() {
 
         {/* Header Card */}
         <div className="bg-card rounded-[2rem] p-8 border border-border shadow-sm flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group transition-colors">
-          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-primary/10 relative flex-shrink-0">
-            <Image
-              src="/avatar.png"
-              alt="Profile"
-              fill
-              className="object-cover"
-            />
+          <div className="w-24 h-24 md:w-28 md:h-28 rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-emerald-500/10 border-2 border-primary/25 flex items-center justify-center relative flex-shrink-0 shadow-lg shadow-primary/5">
+            <span className="text-2xl md:text-3xl font-black tracking-tight text-primary font-mono select-none">
+              {initials}
+            </span>
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-card" title="Account Active" />
           </div>
 
           <div className="flex-1 text-center md:text-left">

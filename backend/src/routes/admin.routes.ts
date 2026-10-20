@@ -15,6 +15,7 @@ import { eq, desc, count, sum, sql, and, ilike, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { validateAdmin, createSession, registerAdmin } from "../services/auth.service";
+import { sanitizeError } from "../utils/errors";
 import "../utils/logger";
 
 const adminRouter = express.Router();
@@ -42,11 +43,11 @@ adminRouter.post("/login", async (req, res) => {
     });
 
     console.log("[ADMIN] POST /login - Login successful for admin:", result.entity.id);
-    const { passwordHash, ...safeAdmin } = result.entity;
-    return res.status(200).json({ user: safeAdmin, sessionId });
+    return res.status(200).json({ user: result.entity, sessionId });
   } catch (error: any) {
     console.error("[ADMIN] POST /login - Error:", error.message);
-    return res.status(500).json({ error: error.message });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 
@@ -66,11 +67,11 @@ adminRouter.post("/register", async (req, res) => {
     });
 
     console.log("[ADMIN] POST /register - Registration successful for admin:", newAdmin.id);
-    const { passwordHash, ...safeAdmin } = newAdmin;
-    return res.status(201).json({ user: safeAdmin, sessionId });
+    return res.status(201).json({ user: newAdmin, sessionId });
   } catch (error: any) {
     console.error("[ADMIN] POST /register - Error:", error.message);
-    return res.status(500).json({ error: error.message });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 

@@ -10,12 +10,11 @@
     "composite": true,
     "strict": true,
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0",
     "jsx": "react-jsx",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
-    "types": ["bun", "node"], // Allows Bun and Node global types
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"] // Supports the @/ prefix inside the backend folder

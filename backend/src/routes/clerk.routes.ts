@@ -23,6 +23,7 @@ import {
 import { parkingLocations } from "../schema/parkingLocations";
 import crypto from "crypto";
 import { db } from "../db";
+import { sanitizeError } from "../utils/errors";
 import { parkingSpots } from "../schema/parkingSpots";
 import { eq } from "drizzle-orm";
 import { reservations } from "../schema/reservations";
@@ -50,11 +51,11 @@ clerkRouter.post("/login", async (req, res) => {
     });
 
     console.log("[CLERK] POST /login - Login successful for clerk:", result.entity.id);
-    const { passwordHash, ...safeEmployee } = result.entity;
-    return res.status(200).json({ user: safeEmployee, sessionId });
+    return res.status(200).json({ user: result.entity, sessionId });
   } catch (error: any) {
     console.log("[CLERK] POST /login - Error:", error.message);
-    return res.status(500).json({ error: error.message });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 
@@ -89,11 +90,11 @@ clerkRouter.post("/register", async (req, res) => {
     });
 
     console.log("[CLERK] POST /register - Clerk registered:", newEmployee.id);
-    const { passwordHash, ...safeEmployee } = newEmployee;
-    return res.status(201).json({ user: safeEmployee, sessionId });
+    return res.status(201).json({ user: newEmployee, sessionId });
   } catch (error: any) {
     console.log("[CLERK] POST /register - Error:", error.message);
-    return res.status(500).json({ error: error.message });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 
@@ -335,14 +336,14 @@ clerkRouter.post("/register-walkin", async (req, res) => {
       "[CLERK] POST /register-walkin - Walk-in registered:",
       result.user.id,
     );
-    const { passwordHash: _hash, ...safeWalkinUser } = result.user;
     return res.status(201).json({
       message: "Walk-in registered successfully",
-      user: safeWalkinUser,
+      user: result.user,
     });
   } catch (error: any) {
     console.log("[CLERK] POST /register-walkin - Error:", error.message);
-    return res.status(500).json({ error: "Internal Server Error" });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 

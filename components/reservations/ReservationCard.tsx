@@ -2,9 +2,8 @@
 
 import { MapPin, Clock, Calendar, Ticket, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
 
-export function ReservationCard({ status, name, address, startTime, endTime, price, active, image, onViewTicket, onCancel }: any) {
+export function ReservationCard({ status, name, address, startTime, endTime, price, active, onViewTicket, onCancel }: any) {
   const dateStr = startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const timeStr = `${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   
@@ -18,11 +17,28 @@ export function ReservationCard({ status, name, address, startTime, endTime, pri
 
   return (
     <div className="bg-card rounded-3xl overflow-hidden border border-border shadow-sm flex flex-col md:flex-row h-full md:min-h-[220px] group hover:shadow-lg transition-all duration-500">
-      <div className="w-full md:w-[240px] relative shrink-0 overflow-hidden bg-slate-900">
-        <Image src={image} alt={name} fill className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" />
-        <div className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-2.5 py-1 bg-card/95 backdrop-blur-md rounded-full text-[8px] font-extrabold text-foreground border border-border shadow-sm uppercase tracking-wider">
-          <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-primary animate-pulse' : 'bg-muted-foreground'}`} />
-          {status}
+      <div className="w-full md:w-[220px] shrink-0 p-5 bg-gradient-to-br from-slate-900 via-slate-950 to-emerald-950 text-white flex flex-col justify-between relative border-b md:border-b-0 md:border-r border-border/40">
+        <div className="flex items-center justify-between">
+          <span className="text-[9px] font-mono font-bold tracking-widest text-emerald-400">
+            PARK ADDIS PASS
+          </span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-mono font-bold text-white border border-white/10 uppercase tracking-wider">
+            <span className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+            {status}
+          </div>
+        </div>
+
+        <div className="my-4 text-center">
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono font-bold text-xl mb-2 shadow-inner">
+            P
+          </div>
+          <p className="text-xs font-mono font-bold text-slate-200 truncate">{name}</p>
+          <p className="text-[10px] font-mono text-emerald-400/90 font-medium">FAST-PASS QR VERIFIED</p>
+        </div>
+
+        <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-[9px] font-mono text-slate-400">
+          <span>GATE 01</span>
+          <span>ETH-MOBILITY</span>
         </div>
       </div>
       

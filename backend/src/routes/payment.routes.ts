@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { validateQRToken } from "../services/reservation.service";
 import { completePayment, failPayment, verifyChapaPayment } from "../services/payment.service";
 import { confirmTopUp } from "../services/wallet.service";
+import { sanitizeError } from "../utils/errors";
 import "../utils/logger";
 
 const paymentRouter = express.Router();
@@ -85,7 +86,8 @@ paymentRouter.all("/callback", async (req, res) => {
     return res.status(400).json({ error: "Payment Failed" });
   } catch (error: any) {
     console.log("[PAYMENT] /callback - Error:", error.message);
-    return res.status(500).json({ error: error.message });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 
@@ -137,7 +139,8 @@ paymentRouter.post("/webhook", async (req: any, res) => {
     return res.status(200).send("OK");
   } catch (error: any) {
     console.log("[PAYMENT] POST /webhook - Error:", error.message);
-    return res.status(500).json({ error: error.message });
+    const sanitized = sanitizeError(error);
+    return res.status(sanitized.statusCode).json({ error: sanitized.error, code: sanitized.code });
   }
 });
 

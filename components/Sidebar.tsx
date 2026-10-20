@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, CalendarDays, User, Settings, LogOut, MapPin, ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 import { useSession } from "@/components/session/AppSessionProvider";
 import { useUI } from "@/components/ui/UIProvider";
+import { Skeleton } from "@/components/Skeleton";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -105,8 +106,8 @@ export function Sidebar({ user }: { user?: {userId: string, fullName: string, em
                 </>
               ) : (
                 <>
-                  <div className="h-3 w-20 bg-muted animate-pulse rounded mb-1" />
-                  <div className="h-2 w-24 bg-muted animate-pulse rounded" />
+                  <Skeleton className="h-3 w-20 rounded mb-1" />
+                  <Skeleton className="h-2 w-24 rounded" />
                 </>
               )}
             </div>

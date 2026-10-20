@@ -152,7 +152,6 @@ export default function ReservationsClient({
               startTime={new Date(res.startTime)}
               endTime={new Date(res.endTime)}
               price={res.pricePerHour || "25.00"}
-              image="/bole.png"
               active={
                 res.status.toUpperCase() === "RESERVED" ||
                 res.status.toUpperCase() === "ACTIVE"
