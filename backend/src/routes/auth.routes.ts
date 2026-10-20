@@ -106,19 +106,19 @@ authRouter.post(
       }
 
       const validationResult = await validateUser(
-        String(email).trim().toLowerCase(),
+        String(email).trim(),
         String(password)
       );
 
       if (!validationResult) {
-        console.log("[AUTH] POST /login - Invalid credentials for email:", email);
+        console.log("[AUTH] POST /login - Invalid credentials for identifier:", email);
         return res.status(401).json({
           error: "Invalid email or password.",
           code: "INVALID_CREDENTIALS",
         });
       }
 
-      const safeUser = toSafeUserDTO(validationResult.entity);
+      const safeUser = validationResult.entity;
       const sessionId = await createSession(safeUser.id, validationResult.type);
 
       res.cookie("sessionId", sessionId, {

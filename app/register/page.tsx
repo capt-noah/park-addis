@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import Link from "next/link";
-import { Mail, Lock, Eye, EyeOff, Chrome, Apple, User, Car, Building2, Phone, Hash, Palette } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Car, Building2, Phone, Hash, Palette } from "lucide-react";
 import { useState } from "react";
 import Loader from "@/components/Loader";
 
@@ -113,7 +113,7 @@ export default function RegisterPage() {
         )}
 
         {/* Form Card */}
-        <div className="bg-card rounded-[2.5rem] border border-border shadow-sm p-6 mb-6 transition-colors">
+        <div className="bg-card rounded-2xl border border-border shadow-xs p-6 mb-6 transition-colors">
           <form onSubmit={step === 1 ? handleNextStep : handleSignup} className="space-y-4">
             {step === 1 && (
               <>
@@ -346,31 +346,6 @@ export default function RegisterPage() {
             )}
           </form>
         </div>
-
-        {/* Divider */}
-        {step === 1 && (
-          <>
-            <div className="relative flex items-center justify-center py-2 mb-3">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border/50"></div>
-              </div>
-              <span className="relative bg-background px-4 text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Or register with</span>
-            </div>
-
-            {/* Social Logins */}
-            <div className="grid grid-cols-2 gap-3">
-              <button className="flex items-center justify-center gap-2 bg-card border border-border py-2.5 rounded-2xl hover:bg-muted transition-colors font-bold text-xs text-foreground shadow-sm">
-                <Chrome className="w-4 h-4" />
-                Google
-              </button>
-              <button className="flex items-center justify-center gap-2 bg-card border border-border py-2.5 rounded-2xl hover:bg-muted transition-colors font-bold text-xs text-foreground shadow-sm">
-                <Apple className="w-4 h-4" />
-                Apple
-              </button>
-            </div>
-          </>
-        )}
-
       </div>
     </main>
   );

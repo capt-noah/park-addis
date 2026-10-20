@@ -1,59 +1,54 @@
 "use client";
 
-import React from 'react';
-import { X, CheckCircle2, AlertCircle, Info, BellRing } from 'lucide-react';
+import React from "react";
+import { X, CheckCircle2, AlertCircle, Info } from "lucide-react";
 
 interface NotificationProps {
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: "success" | "error" | "info";
   onClose: () => void;
 }
 
 export const Notification: React.FC<NotificationProps> = ({ message, type, onClose }) => {
-  const styles = {
+  const config = {
     success: {
-      bg: 'bg-[#064e3b]',
-      border: 'border-emerald-400/20',
-      iconBg: 'bg-emerald-400/20',
-      iconColor: 'text-emerald-400',
-      icon: CheckCircle2
+      icon: CheckCircle2,
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      iconBg: "bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/20",
     },
     error: {
-      bg: 'bg-rose-950',
-      border: 'border-rose-500/20',
-      iconBg: 'bg-rose-500/20',
-      iconColor: 'text-rose-400',
-      icon: AlertCircle
+      icon: AlertCircle,
+      iconColor: "text-rose-600 dark:text-rose-400",
+      iconBg: "bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20",
     },
     info: {
-      bg: 'bg-slate-900',
-      border: 'border-slate-700',
-      iconBg: 'bg-slate-800',
-      iconColor: 'text-slate-300',
-      icon: Info
-    }
+      icon: Info,
+      iconColor: "text-primary",
+      iconBg: "bg-primary/10 border border-primary/20",
+    },
   }[type];
 
-  const Icon = styles.icon;
+  const Icon = config.icon;
 
   return (
-    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[10000] w-full max-w-md px-4 pointer-events-none">
-      <div className={`${styles.bg} ${styles.border} border rounded-[24px] p-1.5 shadow-2xl shadow-black/40 animate-in fade-in slide-in-from-top-6 flex items-center gap-4 pointer-events-auto group`}>
-        <div className="flex-1 flex items-center gap-4 pl-3 py-2">
-          <div className={`${styles.iconBg} ${styles.iconColor} p-2.5 rounded-2xl`}>
-             <Icon size={22} strokeWidth={2.5} />
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[10000] w-full max-w-sm px-4 pointer-events-none">
+      <div className="bg-card/95 text-foreground border border-border/80 rounded-xl p-3 shadow-lg shadow-black/5 dark:shadow-black/20 backdrop-blur-md animate-in fade-in slide-in-from-top-3 duration-200 flex items-center justify-between gap-3 pointer-events-auto">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${config.iconBg} ${config.iconColor}`}>
+            <Icon className="w-4 h-4" />
           </div>
-          <div className="flex flex-col">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-0.5">Notification</p>
-            <p className="text-[13px] font-bold text-white tracking-tight leading-tight">{message}</p>
-          </div>
+          <p className="text-xs font-semibold text-foreground tracking-tight leading-snug truncate">
+            {message}
+          </p>
         </div>
         
         <button 
+          type="button"
           onClick={onClose}
-          className="h-14 w-14 flex items-center justify-center rounded-2xl hover:bg-white/5 transition-colors text-white/20 hover:text-white"
+          aria-label="Dismiss notification"
+          className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors shrink-0"
         >
-          <X size={18} strokeWidth={3} />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

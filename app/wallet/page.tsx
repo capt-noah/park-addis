@@ -62,7 +62,10 @@ export default function WalletPage() {
       
       // 1. Get User
       const userRes = await fetch("/api/auth/me");
-      if (!userRes.ok) throw new Error("Auth failed");
+      if (!userRes.ok) {
+        window.location.href = "/login";
+        return;
+      }
       const userData = await userRes.json();
       const currentUserId = userData.id || userData.userId;
       setUserId(currentUserId);

@@ -208,7 +208,12 @@ export async function registerVehicle(
 }
 
 export async function findUserByEmail(email: string) {
-  const user = await db.select().from(users).where(eq(users.email, email));
+  const cleanEmail = email.trim();
+  const user = await db
+    .select()
+    .from(users)
+    .where(sql`lower(${users.email}) = lower(${cleanEmail})`)
+    .limit(1);
   return user[0] ?? null;
 }
 
@@ -304,13 +309,51 @@ export async function findUserById(userId: string) {
  * Validates a Driver/Standard User.
  * Strips passwordHash immediately upon verification.
  */
-export async function validateUser(email: string, password: string) {
-  const user = await findUserByEmail(email);
-  if (!user) return false;
+export async function validateUser(identifier: string, password: string) {
+  const cleanId = String(identifier).trim();
+  let user: any = await findUserByEmail(cleanId);
+  if (!user && (/\d{4,}/.test(cleanId) || !cleanId.includes("@"))) {
+    user = await findUserByPhone(cleanId);
+  }
 
-  const isValid = await bcrypt.compare(password, user.passwordHash);
-  if (isValid) {
-    return { entity: toSafeUserDTO(user), type: "user" as const };
+  if (user) {
+    const isValid = await bcrypt.compare(password, user.passwordHash);
+    if (isValid) {
+      return { entity: toSafeUserDTO(user), type: "user" as const };
+    }
+    return false;
+  }
+
+  // If not found in users table, check employees
+  const employee = await db
+    .select()
+    .from(employees)
+    .where(sql`lower(${employees.email}) = lower(${cleanId})`)
+    .limit(1)
+    .then((r) => r[0]);
+
+  if (employee) {
+    const isValid = await bcrypt.compare(password, employee.passwordHash);
+    if (isValid) {
+      return { entity: toSafeEmployeeDTO(employee), type: "employee" as const };
+    }
+    return false;
+  }
+
+  // If not found in employees, check admins
+  const admin = await db
+    .select()
+    .from(admins)
+    .where(sql`lower(${admins.email}) = lower(${cleanId})`)
+    .limit(1)
+    .then((r) => r[0]);
+
+  if (admin) {
+    const isValid = await bcrypt.compare(password, admin.passwordHash);
+    if (isValid) {
+      return { entity: toSafeAdminDTO(admin), type: "admin" as const };
+    }
+    return false;
   }
 
   return false;
